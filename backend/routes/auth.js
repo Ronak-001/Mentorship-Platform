@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { getJwtSecret } = require('../utils/jwt');
 const router = express.Router();
 
 // Register
@@ -28,7 +29,7 @@ router.post('/register', async (req, res) => {
     // Generate token
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET || 'your-secret-key',
+      getJwtSecret(),
       { expiresIn: '7d' }
     );
 
@@ -66,7 +67,7 @@ router.post('/login', async (req, res) => {
     // Generate token
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET || 'your-secret-key',
+      getJwtSecret(),
       { expiresIn: '7d' }
     );
 

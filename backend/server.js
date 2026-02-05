@@ -1,23 +1,48 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
 const http = require('http');
 const socketIo = require('socket.io');
+const path = require('path');
+const fs = require('fs');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:3000';
+const isProd = process.env.NODE_ENV === 'production';
+const corsOptions = {
+  origin: isProd ? allowedOrigin : true,
+  credentials: true,
+};
+
+app.set('trust proxy', 1);
+
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
+    origin: isProd ? allowedOrigin : true,
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
 });
 
 // Middleware
-app.use(cors());
+app.use(helmet());
+app.use(cors(corsOptions));
+app.use(morgan(isProd ? 'combined' : 'dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Basic rate limit for API
+app.use('/api', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
@@ -46,12 +71,33 @@ const connectDB = async () => {
 
 connectDB();
 
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ ok: true, status: 'up' });
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/groups', require('./routes/groups'));
+
+// Serve frontend build (SPA) in production only (after `frontend` is built)
+const frontendPath = path.join(__dirname, '../frontend/build');
+if (isProd && fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+}
+
+// Error handler (keep last)
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ message: 'Internal server error' });
+});
 
 // Socket.io for real-time chat and video calls
 io.on('connection', (socket) => {

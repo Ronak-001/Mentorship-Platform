@@ -7,6 +7,10 @@ import './Feed.css';
 
 const getUploadsBase = () => {
   const api = process.env.REACT_APP_API_URL || '';
+  // If using relative API (/api), serve uploads from same origin
+  if (api.startsWith('/')) {
+    return window.location.origin;
+  }
   return api.replace(/\/api\/?$/, '') || 'http://localhost:5000';
 };
 

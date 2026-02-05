@@ -6,7 +6,7 @@ import { FiSend, FiVideo } from 'react-icons/fi';
 import Avatar from '../Avatar';
 import './Chat.css';
 
-const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+const socket = io(process.env.REACT_APP_SOCKET_URL || window.location.origin);
 
 const Chat = ({ user }) => {
   const { id } = useParams();

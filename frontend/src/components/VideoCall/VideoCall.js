@@ -4,7 +4,7 @@ import io from 'socket.io-client';
 import { FiVideo, FiVideoOff, FiMic, FiMicOff, FiX } from 'react-icons/fi';
 import './VideoCall.css';
 
-const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+const socket = io(process.env.REACT_APP_SOCKET_URL || window.location.origin);
 
 const VideoCall = ({ user }) => {
   const { roomId } = useParams();
