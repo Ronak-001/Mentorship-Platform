@@ -12,7 +12,9 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:3000';
+// Normalize CLIENT_URL by removing trailing slash
+const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+const allowedOrigin = clientUrl.replace(/\/$/, ''); // Remove trailing slash if present
 const isProd = process.env.NODE_ENV === 'production';
 const corsOptions = {
   origin: isProd ? allowedOrigin : true,
