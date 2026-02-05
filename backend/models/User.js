@@ -32,6 +32,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  coverPhoto: {
+    type: String,
+    default: ''
+  },
   experience: [{
     title: String,
     company: String,

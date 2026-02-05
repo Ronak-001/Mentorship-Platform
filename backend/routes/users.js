@@ -52,7 +52,10 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Update user profile
-router.put('/:id', auth, upload.single('profilePicture'), async (req, res) => {
+router.put('/:id', auth, upload.fields([
+  { name: 'profilePicture', maxCount: 1 },
+  { name: 'coverPhoto', maxCount: 1 }
+]), async (req, res) => {
   try {
     if (req.user._id.toString() !== req.params.id) {
       return res.status(403).json({ message: 'Not authorized' });
@@ -60,9 +63,17 @@ router.put('/:id', auth, upload.single('profilePicture'), async (req, res) => {
 
     const updates = { ...req.body };
     delete updates.password;
-    if (req.file) {
-      updates.profilePicture = `/uploads/${req.file.filename}`;
+    
+    // Handle profilePicture upload
+    if (req.files?.profilePicture) {
+      updates.profilePicture = `/uploads/${req.files.profilePicture[0].filename}`;
     }
+    
+    // Handle coverPhoto upload
+    if (req.files?.coverPhoto) {
+      updates.coverPhoto = `/uploads/${req.files.coverPhoto[0].filename}`;
+    }
+    
     // Convert comma-separated skills string to array
     if (typeof updates.skills === 'string') {
       updates.skills = updates.skills.split(',').map(s => s.trim()).filter(Boolean);

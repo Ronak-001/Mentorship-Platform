@@ -29,6 +29,7 @@ const Profile = ({ user: currentUser }) => {
   const [editCertificates, setEditCertificates] = useState([]);
   const [saving, setSaving] = useState(false);
   const [profilePictureFile, setProfilePictureFile] = useState(null);
+  const [coverPhotoFile, setCoverPhotoFile] = useState(null);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -141,6 +142,7 @@ const Profile = ({ user: currentUser }) => {
   const cancelEditing = () => {
     setEditing(false);
     setProfilePictureFile(null);
+    setCoverPhotoFile(null);
   };
 
   const handleSaveProfile = async (e) => {
@@ -151,6 +153,7 @@ const Profile = ({ user: currentUser }) => {
       formData.append('bio', editBio);
       formData.append('skills', editSkills);
       if (profilePictureFile) formData.append('profilePicture', profilePictureFile);
+      if (coverPhotoFile) formData.append('coverPhoto', coverPhotoFile);
       // Send arrays as JSON; convert date strings to ISO for backend
       const expPayload = editExperience.map((e) => ({
         ...e,
@@ -174,6 +177,7 @@ const Profile = ({ user: currentUser }) => {
       setProfileUser(res.data);
       setEditing(false);
       setProfilePictureFile(null);
+      setCoverPhotoFile(null);
     } catch (err) {
       console.error('Error saving profile:', err);
     } finally {
@@ -185,14 +189,66 @@ const Profile = ({ user: currentUser }) => {
     <div className="profile-container">
       <div className="container">
         <div className="profile-header glass">
-          <div className="profile-cover">
-            <div className="profile-picture-container">
-              <Avatar name={profileUser.name} src={profileUser.profilePicture} size="lg" className="profile-picture" />
-            </div>
+          <div className="profile-cover" style={{
+            backgroundImage: profileUser.coverPhoto ? `url(${profileUser.coverPhoto})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            height: '200px',
+            position: 'relative',
+            marginBottom: '-60px'
+          }}>
+            {isOwnProfile && editing && (
+              <label style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: 'rgba(0,0,0,0.6)',
+                color: 'white',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}>
+                Change Cover
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => setCoverPhotoFile(e.target.files?.[0] || null)} 
+                  style={{ display: 'none' }}
+                />
+              </label>
+            )}
+          </div>
+          <div className="profile-picture-container" style={{ position: 'relative', zIndex: 1, marginTop: '-30px' }}>
+            <Avatar name={profileUser.name} src={profileUser.profilePicture} size="lg" className="profile-picture" />
+            {isOwnProfile && editing && (
+              <label style={{
+                position: 'absolute',
+                bottom: '0',
+                right: '0',
+                background: '#667eea',
+                color: 'white',
+                padding: '6px 10px',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}>
+                📷
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => setProfilePictureFile(e.target.files?.[0] || null)} 
+                  style={{ display: 'none' }}
+                />
+              </label>
+            )}
           </div>
           <div className="profile-info">
             <h1 className="profile-name">{profileUser.name}</h1>
             <p className="profile-role">{profileUser.role}</p>
+            <p className="profile-connections" style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>
+              {profileUser.connections?.length || 0} Connections
+            </p>
             <p className="profile-bio">{profileUser.bio || 'No bio yet'}</p>
 
             {isOwnProfile && !editing && (
@@ -203,6 +259,9 @@ const Profile = ({ user: currentUser }) => {
 
             {isOwnProfile && editing && (
               <form onSubmit={handleSaveProfile} className="profile-edit-form" style={{ marginTop: '1rem', textAlign: 'left' }}>
+                <p style={{ fontSize: '12px', color: '#666', marginBottom: '1rem' }}>
+                  💡 Tip: Click on your profile picture or cover photo to change them
+                </p>
                 <label>
                   <span>Bio</span>
                   <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} rows={3} />
@@ -210,10 +269,6 @@ const Profile = ({ user: currentUser }) => {
                 <label>
                   <span>Skills (comma-separated)</span>
                   <input type="text" value={editSkills} onChange={(e) => setEditSkills(e.target.value)} placeholder="e.g. JavaScript, React, Node.js" />
-                </label>
-                <label>
-                  <span>Profile picture</span>
-                  <input type="file" accept="image/*" onChange={(e) => setProfilePictureFile(e.target.files?.[0] || null)} />
                 </label>
 
                 <h3 style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>Experience</h3>
@@ -323,24 +378,6 @@ const Profile = ({ user: currentUser }) => {
           </div>
 
           <div className="profile-section glass">
-            <h2>Education</h2>
-            {profileUser.education && profileUser.education.length > 0 ? (
-              profileUser.education.map((edu, index) => (
-                <div key={index} className="education-item">
-                  <h3>{edu.degree} in {edu.field}</h3>
-                  <p className="school">{edu.school}</p>
-                  <p className="date">
-                    {formatDate(edu.startDate)} – {formatDate(edu.endDate)}
-                  </p>
-                  {edu.description && <p>{edu.description}</p>}
-                </div>
-              ))
-            ) : (
-              <p>No education added yet</p>
-            )}
-          </div>
-
-          <div className="profile-section glass">
             <h2>Certificates</h2>
             {profileUser.certificates && profileUser.certificates.length > 0 ? (
               <div className="certificates-grid">
@@ -375,6 +412,24 @@ const Profile = ({ user: currentUser }) => {
               </div>
             ) : (
               <p>No skills added yet</p>
+            )}
+          </div>
+
+          <div className="profile-section glass">
+            <h2>Education</h2>
+            {profileUser.education && profileUser.education.length > 0 ? (
+              profileUser.education.map((edu, index) => (
+                <div key={index} className="education-item">
+                  <h3>{edu.degree} in {edu.field}</h3>
+                  <p className="school">{edu.school}</p>
+                  <p className="date">
+                    {formatDate(edu.startDate)} – {formatDate(edu.endDate)}
+                  </p>
+                  {edu.description && <p>{edu.description}</p>}
+                </div>
+              ))
+            ) : (
+              <p>No education added yet</p>
             )}
           </div>
         </div>

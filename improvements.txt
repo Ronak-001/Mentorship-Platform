@@ -1,0 +1,17 @@
+Profile section:
+- Can't upload any cover photo and profile photo. 
+- In profile photo section, I want ladder manner sections where first should be experience, then certificates, then skills, then education.
+- number of connections should be shown.
+
+Feed section:
+- After liking a post, my profile photo gets erased. 
+- to send connection request and receive , it's just static. and i should accept or reject connection and able to see it in chat section . after accepting only i can send or receive message
+-No option to delete or edit post. after editing in, it should show time of last time edited.
+- For section if there is no mentors or there is no friends, it's showing a go to my profile box. It should be totally removed.
+- 
+Chat section:
+- Video call feature isn't working. When it's clicked, it is not sending a connection request to the targeted user to whom I want to video call. Means it's totally not working. And the user should be able to see , means accept or reject the video call.
+
+Group:
+- Not able to add members 
+- there is no search bar to search people globally  where we can search for any targeted profile and groups.

@@ -99,6 +99,12 @@ router.post('/:id/like', auth, async (req, res) => {
     }
 
     await post.save();
+    
+    // Populate author before sending back
+    await post.populate('author', 'name profilePicture role');
+    await post.populate('likes', 'name');
+    await post.populate('comments.user', 'name profilePicture');
+    
     res.json(post);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -119,6 +125,10 @@ router.post('/:id/comment', auth, async (req, res) => {
     });
 
     await post.save();
+    
+    // Populate all fields before sending back
+    await post.populate('author', 'name profilePicture role');
+    await post.populate('likes', 'name');
     await post.populate('comments.user', 'name profilePicture');
     
     res.json(post);
