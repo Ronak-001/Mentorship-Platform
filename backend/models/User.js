@@ -66,6 +66,37 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  connectionRequests: [{
+    sender: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'rejected'],
+      default: 'pending'
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  videoCallRequests: [{
+    caller: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    roomId: String,
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'rejected', 'cancelled'],
+      default: 'pending'
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   mentorRequests: [{
     student: {
       type: mongoose.Schema.Types.ObjectId,

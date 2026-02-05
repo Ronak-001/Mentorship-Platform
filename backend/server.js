@@ -53,7 +53,7 @@ app.use('/uploads', express.static('uploads'));
 const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mentorconnect';
-    
+
     const conn = await mongoose.connect(mongoURI, {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
@@ -133,6 +133,36 @@ io.on('connection', (socket) => {
 
   socket.on('send-message', (data) => {
     socket.to(data.chatId).emit('receive-message', data);
+  });
+
+  // Connection request events
+  socket.on('connection-request-sent', (data) => {
+    socket.to(data.recipientId).emit('connection-request-received', data);
+  });
+
+  socket.on('connection-request-accepted', (data) => {
+    socket.to(data.senderId).emit('connection-accepted', data);
+  });
+
+  socket.on('connection-request-rejected', (data) => {
+    socket.to(data.senderId).emit('connection-rejected', data);
+  });
+
+  // Video call request events
+  socket.on('video-call-request', (data) => {
+    socket.to(data.recipientId).emit('incoming-video-call', data);
+  });
+
+  socket.on('video-call-accepted', (data) => {
+    socket.to(data.callerId).emit('video-call-accepted', data);
+  });
+
+  socket.on('video-call-rejected', (data) => {
+    socket.to(data.callerId).emit('video-call-rejected', data);
+  });
+
+  socket.on('video-call-cancelled', (data) => {
+    socket.to(data.recipientId).emit('video-call-cancelled', data);
   });
 
   socket.on('disconnect', () => {

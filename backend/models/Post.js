@@ -36,7 +36,14 @@ const postSchema = new mongoose.Schema({
   }],
   tags: [{
     type: String
-  }]
+  }],
+  isEdited: {
+    type: Boolean,
+    default: false
+  },
+  editedAt: {
+    type: Date
+  }
 }, {
   timestamps: true
 });

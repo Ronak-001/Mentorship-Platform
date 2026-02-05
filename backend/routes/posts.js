@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
 });
@@ -60,7 +60,7 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', auth, upload.array('media', 10), async (req, res) => {
   try {
     const { content, type, tags } = req.body;
-    
+
     const media = req.files ? req.files.map(file => ({
       url: `/uploads/${file.filename}`,
       type: file.mimetype.startsWith('image/') ? 'image' : 'video'
@@ -76,8 +76,39 @@ router.post('/', auth, upload.array('media', 10), async (req, res) => {
 
     await post.save();
     await post.populate('author', 'name profilePicture role');
-    
+
     res.status(201).json(post);
+  } catch (error) {
+    console.error('Post creation error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Edit post
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    // Update content
+    post.content = req.body.content || post.content;
+    post.isEdited = true;
+    post.editedAt = new Date();
+
+    await post.save();
+
+    // Populate all fields before sending back
+    await post.populate('author', 'name profilePicture role');
+    await post.populate('likes', 'name');
+    await post.populate('comments.user', 'name profilePicture');
+
+    res.json(post);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -99,12 +130,12 @@ router.post('/:id/like', auth, async (req, res) => {
     }
 
     await post.save();
-    
+
     // Populate author before sending back
     await post.populate('author', 'name profilePicture role');
     await post.populate('likes', 'name');
     await post.populate('comments.user', 'name profilePicture');
-    
+
     res.json(post);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -125,12 +156,12 @@ router.post('/:id/comment', auth, async (req, res) => {
     });
 
     await post.save();
-    
+
     // Populate all fields before sending back
     await post.populate('author', 'name profilePicture role');
     await post.populate('likes', 'name');
     await post.populate('comments.user', 'name profilePicture');
-    
+
     res.json(post);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
+const Group = require('../models/Group');
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -63,17 +64,17 @@ router.put('/:id', auth, upload.fields([
 
     const updates = { ...req.body };
     delete updates.password;
-    
+
     // Handle profilePicture upload
     if (req.files?.profilePicture) {
       updates.profilePicture = `/uploads/${req.files.profilePicture[0].filename}`;
     }
-    
+
     // Handle coverPhoto upload
     if (req.files?.coverPhoto) {
       updates.coverPhoto = `/uploads/${req.files.coverPhoto[0].filename}`;
     }
-    
+
     // Convert comma-separated skills string to array
     if (typeof updates.skills === 'string') {
       updates.skills = updates.skills.split(',').map(s => s.trim()).filter(Boolean);
@@ -101,32 +102,191 @@ router.put('/:id', auth, upload.fields([
   }
 });
 
-// Connect with user
+// Send connection request
 router.post('/:id/connect', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    const currentUser = await User.findById(req.user._id);
+    const recipient = await User.findById(req.params.id);
+    const sender = await User.findById(req.user._id);
 
-    if (!user) {
+    if (!recipient) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (user._id.toString() === currentUser._id.toString()) {
+    if (recipient._id.toString() === sender._id.toString()) {
       return res.status(400).json({ message: 'Cannot connect with yourself' });
     }
 
-    if (!currentUser.connections.includes(user._id)) {
-      currentUser.connections.push(user._id);
-      await currentUser.save();
+    // Check if already connected
+    if (sender.connections.includes(recipient._id)) {
+      return res.status(400).json({ message: 'Already connected' });
     }
 
-    if (!user.connections.includes(currentUser._id)) {
-      user.connections.push(currentUser._id);
-      await user.save();
+    // Initialize connectionRequests if it doesn't exist
+    if (!recipient.connectionRequests) {
+      recipient.connectionRequests = [];
     }
 
-    res.json({ message: 'Connected successfully' });
+    // Check if request already exists
+    const existingRequest = recipient.connectionRequests.find(
+      req => req.sender.toString() === sender._id.toString() && req.status === 'pending'
+    );
+
+    if (existingRequest) {
+      return res.status(400).json({ message: 'Connection request already sent' });
+    }
+
+    // Create connection request
+    recipient.connectionRequests.push({
+      sender: sender._id,
+      status: 'pending'
+    });
+    await recipient.save();
+
+    res.json({ message: 'Connection request sent successfully' });
   } catch (error) {
+    console.error('Connection request error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// Get connection requests
+router.get('/connection-requests', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    // Handle case where connectionRequests field doesn't exist yet
+    if (!user.connectionRequests || user.connectionRequests.length === 0) {
+      return res.json([]);
+    }
+
+    // Manually populate and filter out invalid requests
+    const validRequests = [];
+    for (const request of user.connectionRequests) {
+      if (request.status === 'pending') {
+        try {
+          const sender = await User.findById(request.sender).select('name profilePicture role bio');
+          if (sender) {
+            validRequests.push({
+              _id: request._id,
+              sender: sender,
+              status: request.status,
+              createdAt: request.createdAt
+            });
+          }
+        } catch (err) {
+          // Skip invalid requests
+          console.log('Skipping invalid request:', err.message);
+        }
+      }
+    }
+
+    res.json(validRequests);
+  } catch (error) {
+    console.error('Connection requests error:', error.message);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Accept connection request
+router.post('/connection-requests/:requestId/accept', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const request = user.connectionRequests.id(req.params.requestId);
+
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({ message: 'Request already processed' });
+    }
+
+    // Update request status
+    request.status = 'accepted';
+
+    // Add to connections
+    if (!user.connections.includes(request.sender)) {
+      user.connections.push(request.sender);
+    }
+    await user.save();
+
+    // Add to sender's connections
+    const sender = await User.findById(request.sender);
+    if (sender && !sender.connections.includes(user._id)) {
+      sender.connections.push(user._id);
+      await sender.save();
+    }
+
+    res.json({ message: 'Connection request accepted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Reject connection request
+router.post('/connection-requests/:requestId/reject', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const request = user.connectionRequests.id(req.params.requestId);
+
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+
+    request.status = 'rejected';
+    await user.save();
+
+    res.json({ message: 'Connection request rejected' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Search users and groups
+router.get('/search', auth, async (req, res) => {
+  try {
+    const { query, type } = req.query;
+
+    if (!query) {
+      return res.json({ users: [], groups: [] });
+    }
+
+    const searchRegex = new RegExp(query, 'i');
+    let results = { users: [], groups: [] };
+
+    if (!type || type === 'users') {
+      const users = await User.find({
+        _id: { $ne: req.user._id },
+        $or: [
+          { name: searchRegex },
+          { email: searchRegex },
+          { bio: searchRegex },
+          { skills: searchRegex }
+        ]
+      })
+        .select('name email role profilePicture bio skills')
+        .limit(20);
+      results.users = users;
+    }
+
+    if (!type || type === 'groups') {
+      const groups = await Group.find({
+        $or: [
+          { name: searchRegex },
+          { description: searchRegex }
+        ]
+      })
+        .populate('admin', 'name')
+        .limit(20);
+      results.groups = groups;
+    }
+
+    res.json(results);
+  } catch (error) {
+    console.error('Search error:', error.message);
+    console.error('Stack:', error.stack);
     res.status(500).json({ message: error.message });
   }
 });

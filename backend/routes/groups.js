@@ -26,7 +26,7 @@ const upload = multer({ storage });
 router.post('/', auth, upload.single('groupPicture'), async (req, res) => {
   try {
     const { name, description } = req.body;
-    
+
     const group = new Group({
       name,
       description,
@@ -38,7 +38,7 @@ router.post('/', auth, upload.single('groupPicture'), async (req, res) => {
     await group.save();
     await group.populate('admin', 'name profilePicture');
     await group.populate('members', 'name profilePicture');
-    
+
     res.status(201).json(group);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -54,7 +54,7 @@ router.get('/', auth, async (req, res) => {
       .populate('admin', 'name profilePicture')
       .populate('members', 'name profilePicture')
       .sort({ createdAt: -1 });
-    
+
     res.json(groups);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -68,7 +68,7 @@ router.get('/:id', auth, async (req, res) => {
       .populate('admin', 'name profilePicture')
       .populate('members', 'name profilePicture')
       .populate('messages.sender', 'name profilePicture');
-    
+
     if (!group) {
       return res.status(404).json({ message: 'Group not found' });
     }
@@ -87,7 +87,7 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/:id/join', auth, async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
-    
+
     if (!group) {
       return res.status(404).json({ message: 'Group not found' });
     }
@@ -108,7 +108,7 @@ router.post('/:id/join', auth, async (req, res) => {
 router.post('/:id/leave', auth, async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
-    
+
     if (!group) {
       return res.status(404).json({ message: 'Group not found' });
     }
@@ -116,7 +116,7 @@ router.post('/:id/leave', auth, async (req, res) => {
     group.members = group.members.filter(
       m => m.toString() !== req.user._id.toString()
     );
-    
+
     await group.save();
     res.json({ message: 'Left group successfully' });
   } catch (error) {
@@ -128,7 +128,7 @@ router.post('/:id/leave', auth, async (req, res) => {
 router.post('/:id/messages', auth, async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
-    
+
     if (!group) {
       return res.status(404).json({ message: 'Group not found' });
     }
@@ -145,7 +145,49 @@ router.post('/:id/messages', auth, async (req, res) => {
     group.messages.push(message);
     await group.save();
     await group.populate('messages.sender', 'name profilePicture');
-    
+
+    res.json(group);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Add member to group (admin only)
+router.post('/:id/add-member', auth, async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check if user is admin
+    if (group.admin.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only admin can add members' });
+    }
+
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    // Check if user exists
+    const User = require('../models/User');
+    const userToAdd = await User.findById(userId);
+    if (!userToAdd) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if already a member
+    if (group.members.some(m => m.toString() === userId)) {
+      return res.status(400).json({ message: 'User is already a member' });
+    }
+
+    group.members.push(userId);
+    await group.save();
+    await group.populate('members', 'name profilePicture');
+
     res.json(group);
   } catch (error) {
     res.status(500).json({ message: error.message });
