@@ -2,7 +2,13 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { FiHeart, FiMessageCircle, FiTrash2 } from 'react-icons/fi';
+import Avatar from '../Avatar';
 import './Feed.css';
+
+const getUploadsBase = () => {
+  const api = process.env.REACT_APP_API_URL || '';
+  return api.replace(/\/api\/?$/, '') || 'http://localhost:5000';
+};
 
 const PostCard = ({ post, currentUser, onUpdate, onDelete }) => {
   const [showComments, setShowComments] = useState(false);
@@ -57,11 +63,7 @@ const PostCard = ({ post, currentUser, onUpdate, onDelete }) => {
     <div className="post-card glass">
       <div className="post-header">
         <Link to={`/profile/${authorId}`} className="post-author">
-          <img
-            src={author.profilePicture || 'https://via.placeholder.com/40'}
-            alt={author.name}
-            className="post-avatar"
-          />
+          <Avatar name={author.name} src={author.profilePicture} size="sm" className="post-avatar" />
           <div>
             <div className="author-name">{author.name}</div>
             <div className="author-role">{author.role}</div>
@@ -82,13 +84,13 @@ const PostCard = ({ post, currentUser, onUpdate, onDelete }) => {
               <div key={index} className="media-item">
                 {media.type === 'image' ? (
                   <img
-                    src={`http://localhost:5000${media.url}`}
+                    src={`${getUploadsBase()}${media.url}`}
                     alt="Post media"
                     className="post-image"
                   />
                 ) : (
                   <video
-                    src={`http://localhost:5000${media.url}`}
+                    src={`${getUploadsBase()}${media.url}`}
                     controls
                     className="post-video"
                   />
@@ -121,11 +123,7 @@ const PostCard = ({ post, currentUser, onUpdate, onDelete }) => {
               const commentUser = comment.user || {};
               return (
                 <div key={index} className="comment">
-                  <img
-                    src={commentUser.profilePicture || 'https://via.placeholder.com/30'}
-                    alt={commentUser.name}
-                    className="comment-avatar"
-                  />
+                  <Avatar name={commentUser.name} src={commentUser.profilePicture} size="sm" className="comment-avatar" />
                   <div className="comment-content">
                     <div className="comment-author">{commentUser.name}</div>
                     <div className="comment-text">{comment.text}</div>

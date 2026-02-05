@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { FiSend, FiVideo } from 'react-icons/fi';
+import Avatar from '../Avatar';
 import './Chat.css';
 
 const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
@@ -113,14 +114,10 @@ const Chat = ({ user }) => {
 
   return (
     <div className="chat-container">
-      <div className="chat-header glass">
+      <div className="chat-header">
         <Link to="/chat" className="back-link">← Back</Link>
         <div className="chat-header-user">
-          <img
-            src={otherUser?.profilePicture || 'https://via.placeholder.com/40'}
-            alt={otherUser?.name}
-            className="chat-header-avatar"
-          />
+          <Avatar name={otherUser?.name} src={otherUser?.profilePicture} size="sm" className="chat-header-avatar" />
           <div>
             <div className="chat-header-name">{otherUser?.name}</div>
             <div className="chat-header-role">{otherUser?.role}</div>
@@ -131,18 +128,14 @@ const Chat = ({ user }) => {
         </button>
       </div>
 
-      <div className="messages-container glass">
+      <div className="messages-container">
         <div className="messages-list">
           {chat.messages?.map((msg, index) => {
             const isOwn = (msg.sender._id || msg.sender.id) === (user.id || user._id);
             return (
               <div key={index} className={`message ${isOwn ? 'own' : 'other'}`}>
                 {!isOwn && (
-                  <img
-                    src={msg.sender.profilePicture || 'https://via.placeholder.com/30'}
-                    alt={msg.sender.name}
-                    className="message-avatar"
-                  />
+                  <Avatar name={msg.sender.name} src={msg.sender.profilePicture} size="sm" className="message-avatar" />
                 )}
                 <div className="message-content">
                   {!isOwn && <div className="message-sender">{msg.sender.name}</div>}
@@ -158,7 +151,7 @@ const Chat = ({ user }) => {
         </div>
       </div>
 
-      <form onSubmit={handleSend} className="chat-input-container glass">
+      <form onSubmit={handleSend} className="chat-input-container">
         <input
           type="text"
           value={message}

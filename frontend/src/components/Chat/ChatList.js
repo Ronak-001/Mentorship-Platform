@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import Avatar from '../Avatar';
 import './Chat.css';
 
 const ChatList = ({ user }) => {
@@ -50,13 +51,9 @@ const ChatList = ({ user }) => {
                 <Link
                   key={chat._id}
                   to={`/chat/${chat._id}`}
-                  className="chat-item glass"
+                  className="chat-item"
                 >
-                  <img
-                    src={otherUser?.profilePicture || 'https://via.placeholder.com/50'}
-                    alt={otherUser?.name}
-                    className="chat-avatar"
-                  />
+                  <Avatar name={otherUser?.name} src={otherUser?.profilePicture} size="md" className="chat-avatar" />
                   <div className="chat-info">
                     <div className="chat-name">{otherUser?.name}</div>
                     <div className="chat-last-message">{chat.lastMessage || 'No messages yet'}</div>

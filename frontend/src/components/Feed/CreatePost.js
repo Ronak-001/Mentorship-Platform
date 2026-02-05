@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { FiImage, FiVideo, FiFileText } from 'react-icons/fi';
+import Avatar from '../Avatar';
 import './Feed.css';
 
 const CreatePost = ({ user, onPostCreated }) => {
@@ -48,11 +49,7 @@ const CreatePost = ({ user, onPostCreated }) => {
     <div className="create-post glass">
       <form onSubmit={handleSubmit}>
         <div className="post-header">
-          <img
-            src={user.profilePicture || 'https://via.placeholder.com/40'}
-            alt={user.name}
-            className="post-avatar"
-          />
+          <Avatar name={user.name} src={user.profilePicture} size="sm" className="post-avatar" />
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}

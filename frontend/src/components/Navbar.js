@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiHome, FiMessageCircle, FiUsers, FiCompass, FiVideo, FiLogOut, FiUser } from 'react-icons/fi';
+import { FiHome, FiMessageCircle, FiUsers, FiCompass, FiLogOut, FiUser } from 'react-icons/fi';
 import './Navbar.css';
 
 const Navbar = ({ user, logout }) => {

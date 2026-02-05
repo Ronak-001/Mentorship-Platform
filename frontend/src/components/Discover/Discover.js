@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { FiUserPlus, FiVideo, FiMessageCircle } from 'react-icons/fi';
+import Avatar from '../Avatar';
 import './Discover.css';
 
 const Discover = ({ user }) => {
@@ -90,11 +91,7 @@ const Discover = ({ user }) => {
             return (
               <div key={userId} className="user-card glass">
                 <Link to={`/profile/${userId}`} className="user-link">
-                  <img
-                    src={discoveredUser.profilePicture || 'https://via.placeholder.com/100'}
-                    alt={discoveredUser.name}
-                    className="user-avatar"
-                  />
+                  <Avatar name={discoveredUser.name} src={discoveredUser.profilePicture} size="md" className="user-avatar" />
                   <h3 className="user-name">{discoveredUser.name}</h3>
                   <p className="user-role">{discoveredUser.role}</p>
                   {discoveredUser.bio && (
@@ -142,7 +139,13 @@ const Discover = ({ user }) => {
 
         {users.length === 0 && (
           <div className="empty-state glass">
-            <p>No users found</p>
+            <p>No other users to discover yet.</p>
+            <p style={{ marginTop: '0.5rem', opacity: 0.9 }}>
+              Discover shows other people on the platform — you won&apos;t see yourself here.
+            </p>
+            <Link to={`/profile/${user.id || user._id}`} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+              Go to my profile
+            </Link>
           </div>
         )}
       </div>

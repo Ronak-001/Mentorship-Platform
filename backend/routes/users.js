@@ -58,10 +58,25 @@ router.put('/:id', auth, upload.single('profilePicture'), async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    const updates = req.body;
+    const updates = { ...req.body };
+    delete updates.password;
     if (req.file) {
       updates.profilePicture = `/uploads/${req.file.filename}`;
     }
+    // Convert comma-separated skills string to array
+    if (typeof updates.skills === 'string') {
+      updates.skills = updates.skills.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    // Parse experience, education, certificates (sent as JSON strings from form)
+    ['experience', 'education', 'certificates'].forEach(field => {
+      if (typeof updates[field] === 'string' && updates[field]) {
+        try {
+          updates[field] = JSON.parse(updates[field]);
+        } catch (e) {
+          delete updates[field];
+        }
+      }
+    });
 
     const user = await User.findByIdAndUpdate(
       req.params.id,

@@ -33,3 +33,5 @@ backend/uploads/*
 *.swp
 *.swo
 *~
+backend/.env
+frontend/.env
