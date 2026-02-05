@@ -1,0 +1,66 @@
+Frontend on Vercel + Backend on Render (or Railway) + MongoDB Atlas
+Your team will use one link: the Vercel frontend URL.
+Step 0 — Prereqs (do once)
+You need the code pushed to a GitHub repo you have access to (either collaborator access or your fork).
+You need a working MongoDB Atlas URI.
+Step 1 — Prepare env variables (what goes where)
+Backend (Render) needs these env vars
+MONGODB_URI = your Atlas connection string
+JWT_SECRET = long random secret (don’t use a short one)
+NODE_ENV = production
+CLIENT_URL = your Vercel URL (set this after Vercel deploy)
+Frontend (Vercel) needs these env vars
+REACT_APP_API_URL = https://<your-render-backend>.onrender.com/api
+REACT_APP_SOCKET_URL = https://<your-render-backend>.onrender.com
+Step 2 — Deploy Backend on Render (Free)
+Go to Render → New → Web Service
+Connect your GitHub repo.
+Select the service root:
+If your repo root contains backend/ and frontend/, set Root Directory to:
+Mentorship-Platform/backend (or just backend if your repo root is already Mentorship-Platform)
+Settings:
+Runtime: Node
+Build Command: npm install
+Start Command: npm start
+Add Environment Variables:
+MONGODB_URI
+JWT_SECRET
+NODE_ENV=production
+(Leave CLIENT_URL blank for now)
+Click Create Web Service and wait until it is “Live”.
+Copy the backend URL (example):
+https://mentor-connect-api.onrender.com
+Step 3 — Deploy Frontend on Vercel (Free)
+Go to Vercel → Add New Project → import your GitHub repo
+Set Root Directory to:
+Mentorship-Platform/frontend (or just frontend depending on repo root)
+Framework: Create React App (Vercel detects it)
+Add Environment Variables:
+REACT_APP_API_URL = https://mentor-connect-api.onrender.com/api
+REACT_APP_SOCKET_URL = https://mentor-connect-api.onrender.com
+Deploy
+Copy the Vercel URL (example):
+https://mentor-connect.vercel.app
+Step 4 — Update Render backend with CLIENT_URL (important)
+Go back to Render → your backend service → Environment
+Set:
+CLIENT_URL = https://mentor-connect.vercel.app
+Click Save Changes (Render redeploys)
+This ensures Socket.io CORS + production CORS behave correctly.
+Step 5 — MongoDB Atlas Network Access
+In MongoDB Atlas:
+Network Access
+Add IP:
+easiest dev setting: 0.0.0.0/0 (allow from anywhere)
+If you don’t do this, Render won’t be able to connect.
+Step 6 — Verify everything (quick test)
+Open your Vercel link:
+Register a user
+Login
+Create a post
+Discover another user (create a second account)
+Test chat + video call
+Notes (specific to your codebase)
+Your backend uses Socket.io → that’s why it must be Render/Railway (not Vercel).
+Your backend serves uploads from /uploads on the backend host. Your frontend already points media to backend correctly.
+Render free tier may “sleep” → first load can be slow after idle.

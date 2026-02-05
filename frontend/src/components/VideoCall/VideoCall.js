@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
 import { FiVideo, FiVideoOff, FiMic, FiMicOff, FiX } from 'react-icons/fi';
@@ -15,15 +15,17 @@ const VideoCall = ({ user }) => {
   const [isAudioOn, setIsAudioOn] = useState(true);
   const [remoteStream, setRemoteStream] = useState(null);
 
-  useEffect(() => {
-    initializeCall();
-
-    return () => {
-      cleanup();
-    };
+  const cleanup = useCallback(() => {
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+    }
+    if (localVideoRef.current?.srcObject) {
+      localVideoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    }
+    socket.emit('leave-room', roomId);
   }, [roomId]);
 
-  const initializeCall = async () => {
+  const initializeCall = useCallback(async () => {
     try {
       // Get local stream
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -102,18 +104,17 @@ const VideoCall = ({ user }) => {
     } catch (error) {
       console.error('Error accessing media devices:', error);
       alert('Could not access camera/microphone. Please check permissions.');
+      cleanup();
     }
-  };
+  }, [roomId, cleanup]);
 
-  const cleanup = () => {
-    if (localVideoRef.current?.srcObject) {
-      localVideoRef.current.srcObject.getTracks().forEach(track => track.stop());
-    }
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-    }
-    socket.emit('leave-room', roomId);
-  };
+  useEffect(() => {
+    initializeCall();
+
+    return () => {
+      cleanup();
+    };
+  }, [roomId, initializeCall, cleanup]);
 
   const toggleVideo = () => {
     if (localVideoRef.current?.srcObject) {

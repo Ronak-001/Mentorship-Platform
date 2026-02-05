@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
@@ -15,27 +15,7 @@ const Chat = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
-  useEffect(() => {
-    fetchChat();
-    
-    socket.emit('join-chat', id);
-    socket.on('receive-message', handleReceiveMessage);
-
-    return () => {
-      socket.off('receive-message');
-      socket.emit('leave-chat', id);
-    };
-  }, [id]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [chat?.messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const fetchChat = async () => {
+  const fetchChat = useCallback(async () => {
     try {
       // Check if id is a MongoDB ObjectId (24 hex characters) or user ID
       const isChatId = /^[0-9a-fA-F]{24}$/.test(id);
@@ -58,12 +38,32 @@ const Chat = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const handleReceiveMessage = (data) => {
+  const handleReceiveMessage = useCallback((data) => {
     if (data.chatId === id) {
       fetchChat();
     }
+  }, [id, fetchChat]);
+
+  useEffect(() => {
+    fetchChat();
+    
+    socket.emit('join-chat', id);
+    socket.on('receive-message', handleReceiveMessage);
+
+    return () => {
+      socket.off('receive-message');
+      socket.emit('leave-chat', id);
+    };
+  }, [id, fetchChat, handleReceiveMessage]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chat?.messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSend = async (e) => {

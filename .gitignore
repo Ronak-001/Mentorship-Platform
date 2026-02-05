@@ -35,3 +35,5 @@ backend/uploads/*
 *~
 backend/.env
 frontend/.env
+
+.github

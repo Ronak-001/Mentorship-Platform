@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FiVideo, FiMessageCircle, FiUserPlus, FiEdit2, FiPlus, FiTrash2 } from 'react-icons/fi';
@@ -30,11 +30,7 @@ const Profile = ({ user: currentUser }) => {
   const [saving, setSaving] = useState(false);
   const [profilePictureFile, setProfilePictureFile] = useState(null);
 
-  useEffect(() => {
-    fetchProfile();
-  }, [id]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const res = await axios.get(`/users/${id}`);
       setProfileUser(res.data);
@@ -46,7 +42,11 @@ const Profile = ({ user: currentUser }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, currentUser]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleConnect = async () => {
     try {

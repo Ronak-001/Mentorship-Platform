@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
@@ -15,25 +15,7 @@ const GroupDetail = ({ user }) => {
   const [isMember, setIsMember] = useState(false);
   const messagesEndRef = useRef(null);
 
-  useEffect(() => {
-    fetchGroup();
-    
-    socket.on('group-message', handleReceiveMessage);
-
-    return () => {
-      socket.off('group-message');
-    };
-  }, [id]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [group?.messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const fetchGroup = async () => {
+  const fetchGroup = useCallback(async () => {
     try {
       const res = await axios.get(`/groups/${id}`);
       setGroup(res.data);
@@ -45,12 +27,30 @@ const GroupDetail = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user]);
 
-  const handleReceiveMessage = (data) => {
+  const handleReceiveMessage = useCallback((data) => {
     if (data.groupId === id) {
       fetchGroup();
     }
+  }, [id, fetchGroup]);
+
+  useEffect(() => {
+    fetchGroup();
+    
+    socket.on('group-message', handleReceiveMessage);
+
+    return () => {
+      socket.off('group-message');
+    };
+  }, [id, fetchGroup, handleReceiveMessage]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [group?.messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleJoin = async () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { FiUserPlus, FiVideo, FiMessageCircle } from 'react-icons/fi';
@@ -10,11 +10,7 @@ const Discover = ({ user }) => {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [filter]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const res = await axios.get('/users');
       let filteredUsers = res.data;
@@ -31,7 +27,11 @@ const Discover = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleConnect = async (userId) => {
     try {
