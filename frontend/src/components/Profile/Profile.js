@@ -143,7 +143,7 @@ const Profile = ({ user: currentUser }) => {
       await axios.post(`/users/${id}/request-mentor`, {
         message: 'I would like to learn from you!'
       });
-      setRequestSent(true);
+      alert('Mentor request sent!');
     } catch (error) {
       console.error('Error requesting mentor:', error);
     }
@@ -257,8 +257,6 @@ const Profile = ({ user: currentUser }) => {
       const res = await axios.put(`/users/${id}`, formData);
       setProfileUser(res.data);
       setEditing(false);
-      setProfilePictureFile(null);
-      setCoverPhotoFile(null);
       setCertificateFiles([]);
     } catch (err) {
       console.error('Error saving profile:', err);
