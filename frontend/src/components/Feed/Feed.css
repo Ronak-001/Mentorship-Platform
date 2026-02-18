@@ -187,6 +187,34 @@
   border: 1px solid #e5e7eb;
 }
 
+.blog-media-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: #f9fafb;
+  border: 2px dashed #e5e7eb;
+  border-radius: 8px;
+  color: #4b5563;
+}
+
+.blog-media-preview a {
+  padding: 0.5rem 1rem;
+  background: #2563eb;
+  color: white;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.blog-media-preview a:hover {
+  background: #1d4ed8;
+}
+
 .post-footer {
   display: flex;
   gap: 1rem;

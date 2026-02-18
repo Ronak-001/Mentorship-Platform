@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { FiSend, FiVideo, FiUserPlus } from 'react-icons/fi';
+import { resolveMediaUrl } from '../../utils/url';
+import Avatar from '../Avatar';
 import './Groups.css';
 
 const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
@@ -37,7 +39,7 @@ const GroupDetail = ({ user }) => {
 
   useEffect(() => {
     fetchGroup();
-    
+
     socket.on('group-message', handleReceiveMessage);
 
     return () => {
@@ -70,7 +72,7 @@ const GroupDetail = ({ user }) => {
       const res = await axios.post(`/groups/${id}/messages`, { text: message });
       setGroup(res.data);
       setMessage('');
-      
+
       socket.emit('group-message', {
         groupId: id,
         text: message,
@@ -110,7 +112,7 @@ const GroupDetail = ({ user }) => {
           <div className="group-header-content">
             {group.groupPicture && (
               <img
-                src={`http://localhost:5000${group.groupPicture}`}
+                src={resolveMediaUrl(group.groupPicture)}
                 alt={group.name}
                 className="group-header-image"
               />
@@ -143,9 +145,10 @@ const GroupDetail = ({ user }) => {
                   const sender = msg.sender || {};
                   return (
                     <div key={index} className="group-message">
-                      <img
-                        src={sender.profilePicture || 'https://via.placeholder.com/30'}
-                        alt={sender.name}
+                      <Avatar
+                        name={sender.name}
+                        src={sender.profilePicture}
+                        size="sm"
                         className="message-avatar"
                       />
                       <div className="message-content">

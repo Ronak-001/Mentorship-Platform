@@ -1,0 +1,54 @@
+
+--- POST CREATION ERROR ---
+Time: 2026-02-17T15:14:30.052Z
+Error: Post validation failed: media.0: Cast to [string] failed for value "[ { url: '/uploads/1771341270040-aries.webp', type: 'image' } ]" (type string) at path "media.0" because of "CastError"
+Stack: ValidationError: Post validation failed: media.0: Cast to [string] failed for value "[ { url: '/uploads/1771341270040-aries.webp', type: 'image' } ]" (type string) at path "media.0" because of "CastError"
+    at Document.invalidate (C:\Users\SAGAR PANI\OneDrive\Desktop\MAJOR PROJECT\Mentorship-Platform-main\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at model.$set (C:\Users\SAGAR PANI\OneDrive\Desktop\MAJOR PROJECT\Mentorship-Platform-main\backend\node_modules\mongoose\lib\document.js:1466:12)
+    at model.$set (C:\Users\SAGAR PANI\OneDrive\Desktop\MAJOR PROJECT\Mentorship-Platform-main\backend\node_modules\mongoose\lib\document.js:1121:16)
+    at model.Document (C:\Users\SAGAR PANI\OneDrive\Desktop\MAJOR PROJECT\Mentorship-Platform-main\backend\node_modules\mongoose\lib\document.js:167:12)
+    at model.Model (C:\Users\SAGAR PANI\OneDrive\Desktop\MAJOR PROJECT\Mentorship-Platform-main\backend\node_modules\mongoose\lib\model.js:123:12)
+    at new model (C:\Users\SAGAR PANI\OneDrive\Desktop\MAJOR PROJECT\Mentorship-Platform-main\backend\node_modules\mongoose\lib\model.js:4755:15)
+    at C:\Users\SAGAR PANI\OneDrive\Desktop\MAJOR PROJECT\Mentorship-Platform-main\backend\routes\posts.js:76:18
+    at Layer.handle [as handle_request] (C:\Users\SAGAR PANI\OneDrive\Desktop\MAJOR PROJECT\Mentorship-Platform-main\backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\SAGAR PANI\OneDrive\Desktop\MAJOR PROJECT\Mentorship-Platform-main\backend\node_modules\express\lib\router\route.js:149:13)
+    at done (C:\Users\SAGAR PANI\OneDrive\Desktop\MAJOR PROJECT\Mentorship-Platform-main\backend\node_modules\multer\lib\make-middleware.js:47:7)
+--------------------------
+
+--- GLOBAL ERROR HANDLER ---
+Time: 2026-02-18T05:58:21.263Z
+Method: POST
+URL: /api/posts
+Body Keys: content,type
+Error Message: File too large
+Error Stack: MulterError: File too large
+    at abortWithCode (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\multer\lib\make-middleware.js:73:22)
+    at FileStream.<anonymous> (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\multer\lib\make-middleware.js:136:11)
+    at FileStream.emit (node:events:518:28)
+    at SBMH.ssCb [as _cb] (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\busboy\lib\types\multipart.js:479:32)
+    at feed (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\streamsearch\lib\sbmh.js:248:10)
+    at SBMH.push (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\streamsearch\lib\sbmh.js:104:16)
+    at Multipart._write (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\busboy\lib\types\multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:572:12)
+    at _write (node:internal/streams/writable:501:10)
+    at Writable.write (node:internal/streams/writable:510:10)
+----------------------------
+
+--- GLOBAL ERROR HANDLER ---
+Time: 2026-02-18T05:58:30.120Z
+Method: POST
+URL: /api/posts
+Body Keys: content,type
+Error Message: File too large
+Error Stack: MulterError: File too large
+    at abortWithCode (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\multer\lib\make-middleware.js:73:22)
+    at FileStream.<anonymous> (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\multer\lib\make-middleware.js:136:11)
+    at FileStream.emit (node:events:518:28)
+    at SBMH.ssCb [as _cb] (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\busboy\lib\types\multipart.js:479:32)
+    at feed (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\streamsearch\lib\sbmh.js:248:10)
+    at SBMH.push (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\streamsearch\lib\sbmh.js:104:16)
+    at Multipart._write (C:\Users\asus\Desktop\pani project\Mentorship-Platform\backend\node_modules\busboy\lib\types\multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:572:12)
+    at _write (node:internal/streams/writable:501:10)
+    at Writable.write (node:internal/streams/writable:510:10)
+----------------------------

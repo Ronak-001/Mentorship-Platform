@@ -26,8 +26,20 @@ const getAvatarColor = (name) => {
  */
 const Avatar = ({ name, src, className = '', size = 'md' }) => {
   const sizeClass = `avatar-${size}`;
-  if (src) {
-    return <img src={src} alt={name || 'Avatar'} className={`avatar-img ${sizeClass} ${className}`} />;
+
+  // Only render <img> for valid absolute URLs (e.g. Cloudinary).
+  // Old local paths like "/uploads/..." or empty strings → show initials instead.
+  const isValidUrl = src && (src.startsWith('http://') || src.startsWith('https://'));
+
+  if (isValidUrl) {
+    return (
+      <img
+        src={src}
+        alt={name || 'Avatar'}
+        className={`avatar-img ${sizeClass} ${className}`}
+        onError={(e) => { e.target.style.display = 'none'; }}
+      />
+    );
   }
   return (
     <div

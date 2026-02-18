@@ -1,26 +1,17 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { FiHeart, FiMessageCircle, FiTrash2 } from 'react-icons/fi';
+import { FiHeart, FiMessageCircle, FiTrash2, FiFileText } from 'react-icons/fi';
+import { resolveMediaUrl } from '../../utils/url';
 import Avatar from '../Avatar';
-import './Feed.css';
-
-const getUploadsBase = () => {
-  const api = process.env.REACT_APP_API_URL || '';
-  // If using relative API (/api), serve uploads from same origin
-  if (api.startsWith('/')) {
-    return window.location.origin;
-  }
-  return api.replace(/\/api\/?$/, '') || 'http://localhost:5000';
-};
 
 const PostCard = ({ post, currentUser, onUpdate, onDelete }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const isLiked = post.likes?.some(like => 
-    (typeof like === 'object' ? like._id : like) === (currentUser.id || currentUser._id)
+  const isLiked = post.likes?.some(like =>
+    (typeof like === 'object' ? like._id : like) === (currentUser?.id || currentUser?._id)
   );
 
   const handleLike = async () => {
@@ -50,7 +41,7 @@ const PostCard = ({ post, currentUser, onUpdate, onDelete }) => {
 
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
-    
+
     try {
       await axios.delete(`/posts/${post._id}`);
       onDelete(post._id);
@@ -73,7 +64,7 @@ const PostCard = ({ post, currentUser, onUpdate, onDelete }) => {
             <div className="author-role">{author.role}</div>
           </div>
         </Link>
-        {(currentUser.id || currentUser._id) === authorId && (
+        {currentUser && (currentUser.id || currentUser._id) === authorId && (
           <button onClick={handleDelete} className="delete-btn">
             <FiTrash2 />
           </button>
@@ -88,16 +79,23 @@ const PostCard = ({ post, currentUser, onUpdate, onDelete }) => {
               <div key={index} className="media-item">
                 {media.type === 'image' ? (
                   <img
-                    src={`${getUploadsBase()}${media.url}`}
+                    src={resolveMediaUrl(media.url)}
                     alt="Post media"
                     className="post-image"
                   />
-                ) : (
+                ) : media.type === 'video' ? (
                   <video
-                    src={`${getUploadsBase()}${media.url}`}
+                    src={resolveMediaUrl(media.url)}
                     controls
                     className="post-video"
                   />
+                ) : (
+                  <div className="blog-media-preview">
+                    <FiFileText size={40} />
+                    <a href={resolveMediaUrl(media.url)} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                      View Document
+                    </a>
+                  </div>
                 )}
               </div>
             ))}

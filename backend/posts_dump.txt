@@ -1,0 +1,58 @@
+
+--- Media Post 1 ---
+{
+  "_id": "6994720e76b79662264f90eb",
+  "author": "699445344cf7db54710d1865",
+  "content": "hey",
+  "type": "image",
+  "media": [],
+  "likes": [],
+  "tags": [],
+  "isEdited": false,
+  "comments": [],
+  "createdAt": "2026-02-17T13:50:06.171Z",
+  "updatedAt": "2026-02-17T13:50:06.171Z",
+  "__v": 0
+}
+--- Media Post 2 ---
+{
+  "_id": "69948670b7c6fb20df97c528",
+  "author": "699445344cf7db54710d1865",
+  "content": " ",
+  "type": "image",
+  "media": [
+    {
+      "url": "/uploads/1771341424818-36ffeb84f0e0103ad32a1ffbf0f4403a.jpg",
+      "type": "image",
+      "_id": "69948670b7c6fb20df97c529"
+    }
+  ],
+  "likes": [],
+  "tags": [],
+  "isEdited": false,
+  "comments": [],
+  "createdAt": "2026-02-17T15:17:04.829Z",
+  "updatedAt": "2026-02-17T15:17:04.829Z",
+  "__v": 0
+}
+--- Media Post 3 ---
+{
+  "_id": "6994869db7c6fb20df97c535",
+  "author": "699445344cf7db54710d1865",
+  "content": " ",
+  "type": "video",
+  "media": [
+    {
+      "url": "/uploads/1771341469789-Screen Recording 2025-09-09 232047.mp4",
+      "type": "video",
+      "_id": "6994869db7c6fb20df97c536"
+    }
+  ],
+  "likes": [],
+  "tags": [],
+  "isEdited": false,
+  "comments": [],
+  "createdAt": "2026-02-17T15:17:49.869Z",
+  "updatedAt": "2026-02-17T15:17:49.869Z",
+  "__v": 0
+}

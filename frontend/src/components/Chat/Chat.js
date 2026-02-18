@@ -19,7 +19,7 @@ const Chat = ({ user }) => {
     try {
       // Check if id is a MongoDB ObjectId (24 hex characters) or user ID
       const isChatId = /^[0-9a-fA-F]{24}$/.test(id);
-      
+
       if (isChatId) {
         // It's a chat ID, fetch directly
         const res = await axios.get(`/chat/${id}`);
@@ -48,7 +48,7 @@ const Chat = ({ user }) => {
 
   useEffect(() => {
     fetchChat();
-    
+
     socket.emit('join-chat', id);
     socket.on('receive-message', handleReceiveMessage);
 
@@ -74,7 +74,7 @@ const Chat = ({ user }) => {
       const res = await axios.post(`/chat/${id}/messages`, { text: message });
       setChat(res.data);
       setMessage('');
-      
+
       socket.emit('send-message', {
         chatId: id,
         text: message,

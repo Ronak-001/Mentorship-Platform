@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiVideo, FiMessageCircle, FiUserPlus, FiEdit2, FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FiVideo, FiMessageCircle, FiUserPlus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX } from 'react-icons/fi';
+import { resolveMediaUrl } from '../../utils/url';
 import Avatar from '../Avatar';
 import './Profile.css';
 
@@ -19,8 +20,7 @@ const Profile = ({ user: currentUser }) => {
   const { id } = useParams();
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isConnected, setIsConnected] = useState(false);
-  const [requestSent, setRequestSent] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('NOT_CONNECTED');
   const [editing, setEditing] = useState(false);
   const [editBio, setEditBio] = useState('');
   const [editSkills, setEditSkills] = useState('');
@@ -28,16 +28,67 @@ const Profile = ({ user: currentUser }) => {
   const [editEducation, setEditEducation] = useState([]);
   const [editCertificates, setEditCertificates] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [profilePictureFile, setProfilePictureFile] = useState(null);
-  const [coverPhotoFile, setCoverPhotoFile] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [certificateFiles, setCertificateFiles] = useState([]);
+
+  // Instant profile photo upload
+  const handleProfilePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await axios.patch('/users/profile-photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setProfileUser(res.data);
+      console.log('Profile photo updated successfully');
+    } catch (error) {
+      console.error('Error uploading profile photo:', error);
+      alert('Failed to upload profile photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  // Instant cover photo upload
+  const handleCoverPhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await axios.patch('/users/cover-photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setProfileUser(res.data);
+      console.log('Cover photo updated successfully');
+    } catch (error) {
+      console.error('Error uploading cover photo:', error);
+      alert('Failed to upload cover photo');
+    } finally {
+      setUploadingCover(false);
+    }
+  };
 
   const fetchProfile = useCallback(async () => {
     try {
       const res = await axios.get(`/users/${id}`);
       setProfileUser(res.data);
-      setIsConnected(res.data.connections?.some(
-        conn => (conn._id || conn) === (currentUser.id || currentUser._id)
-      ));
+
+      // Fetch connection status if viewing someone else's profile
+      const myId = currentUser.id || currentUser._id;
+      if (id !== myId) {
+        try {
+          const statusRes = await axios.get(`/users/${id}/connection-status`);
+          setConnectionStatus(statusRes.data.status);
+        } catch {
+          setConnectionStatus('NOT_CONNECTED');
+        }
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -50,11 +101,40 @@ const Profile = ({ user: currentUser }) => {
   }, [fetchProfile]);
 
   const handleConnect = async () => {
+    setConnectionStatus('loading');
     try {
-      await axios.post(`/users/${id}/connect`);
-      setIsConnected(true);
+      const res = await axios.post(`/users/${id}/connect`);
+      setConnectionStatus(res.data.status);
     } catch (error) {
-      console.error('Error connecting:', error);
+      const status = error.response?.data?.status;
+      if (status) {
+        setConnectionStatus(status);
+      } else {
+        setConnectionStatus('NOT_CONNECTED');
+        console.error('Error connecting:', error);
+      }
+    }
+  };
+
+  const handleAcceptRequest = async () => {
+    setConnectionStatus('loading');
+    try {
+      await axios.post(`/users/${id}/accept`);
+      setConnectionStatus('CONNECTED');
+    } catch (error) {
+      console.error('Error accepting:', error);
+      setConnectionStatus('REQUEST_RECEIVED');
+    }
+  };
+
+  const handleDeclineRequest = async () => {
+    setConnectionStatus('loading');
+    try {
+      await axios.post(`/users/${id}/decline`);
+      setConnectionStatus('NOT_CONNECTED');
+    } catch (error) {
+      console.error('Error declining:', error);
+      setConnectionStatus('REQUEST_RECEIVED');
     }
   };
 
@@ -104,36 +184,36 @@ const Profile = ({ user: currentUser }) => {
     setEditExperience(
       profileUser.experience?.length
         ? profileUser.experience.map((e) => ({
-            title: e.title || '',
-            company: e.company || '',
-            startDate: toDateInput(e.startDate),
-            endDate: toDateInput(e.endDate),
-            description: e.description || '',
-            current: !!e.current,
-          }))
+          title: e.title || '',
+          company: e.company || '',
+          startDate: toDateInput(e.startDate),
+          endDate: toDateInput(e.endDate),
+          description: e.description || '',
+          current: !!e.current,
+        }))
         : []
     );
     setEditEducation(
       profileUser.education?.length
         ? profileUser.education.map((e) => ({
-            school: e.school || '',
-            degree: e.degree || '',
-            field: e.field || '',
-            startDate: toDateInput(e.startDate),
-            endDate: toDateInput(e.endDate),
-            description: e.description || '',
-          }))
+          school: e.school || '',
+          degree: e.degree || '',
+          field: e.field || '',
+          startDate: toDateInput(e.startDate),
+          endDate: toDateInput(e.endDate),
+          description: e.description || '',
+        }))
         : []
     );
     setEditCertificates(
       profileUser.certificates?.length
         ? profileUser.certificates.map((c) => ({
-            name: c.name || '',
-            issuer: c.issuer || '',
-            issueDate: toDateInput(c.issueDate),
-            credentialUrl: c.credentialUrl || '',
-            image: c.image || '',
-          }))
+          name: c.name || '',
+          issuer: c.issuer || '',
+          issueDate: toDateInput(c.issueDate),
+          credentialUrl: c.credentialUrl || '',
+          image: c.image || '',
+        }))
         : []
     );
     setEditing(true);
@@ -141,8 +221,7 @@ const Profile = ({ user: currentUser }) => {
 
   const cancelEditing = () => {
     setEditing(false);
-    setProfilePictureFile(null);
-    setCoverPhotoFile(null);
+    setCertificateFiles([]);
   };
 
   const handleSaveProfile = async (e) => {
@@ -152,8 +231,6 @@ const Profile = ({ user: currentUser }) => {
       const formData = new FormData();
       formData.append('bio', editBio);
       formData.append('skills', editSkills);
-      if (profilePictureFile) formData.append('profilePicture', profilePictureFile);
-      if (coverPhotoFile) formData.append('coverPhoto', coverPhotoFile);
       // Send arrays as JSON; convert date strings to ISO for backend
       const expPayload = editExperience.map((e) => ({
         ...e,
@@ -172,12 +249,17 @@ const Profile = ({ user: currentUser }) => {
       }));
       formData.append('experience', JSON.stringify(expPayload));
       formData.append('education', JSON.stringify(eduPayload));
-      formData.append('certificates', JSON.stringify(certPayload));
+      formData.append('certificatesData', JSON.stringify(certPayload));
+      // Append certificate files with unique field names for correct mapping
+      certificateFiles.forEach((file, idx) => {
+        if (file) formData.append(`certificate_file_${idx}`, file);
+      });
       const res = await axios.put(`/users/${id}`, formData);
       setProfileUser(res.data);
       setEditing(false);
       setProfilePictureFile(null);
       setCoverPhotoFile(null);
+      setCertificateFiles([]);
     } catch (err) {
       console.error('Error saving profile:', err);
     } finally {
@@ -190,14 +272,16 @@ const Profile = ({ user: currentUser }) => {
       <div className="container">
         <div className="profile-header glass">
           <div className="profile-cover" style={{
-            backgroundImage: profileUser.coverPhoto ? `url(${profileUser.coverPhoto})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            backgroundImage: (profileUser.coverPhoto && (profileUser.coverPhoto.startsWith('http://') || profileUser.coverPhoto.startsWith('https://')))
+              ? `url(${profileUser.coverPhoto})`
+              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             height: '200px',
             position: 'relative',
             marginBottom: '-60px'
           }}>
-            {isOwnProfile && editing && (
+            {isOwnProfile && (
               <label style={{
                 position: 'absolute',
                 top: '10px',
@@ -209,19 +293,20 @@ const Profile = ({ user: currentUser }) => {
                 cursor: 'pointer',
                 fontSize: '12px'
               }}>
-                Change Cover
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={(e) => setCoverPhotoFile(e.target.files?.[0] || null)} 
+                {uploadingCover ? '⏳ Uploading...' : '📷 Change Cover'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverPhotoUpload}
                   style={{ display: 'none' }}
+                  disabled={uploadingCover}
                 />
               </label>
             )}
           </div>
           <div className="profile-picture-container" style={{ position: 'relative', zIndex: 1, marginTop: '-30px' }}>
             <Avatar name={profileUser.name} src={profileUser.profilePicture} size="lg" className="profile-picture" />
-            {isOwnProfile && editing && (
+            {isOwnProfile && (
               <label style={{
                 position: 'absolute',
                 bottom: '0',
@@ -233,12 +318,13 @@ const Profile = ({ user: currentUser }) => {
                 cursor: 'pointer',
                 fontSize: '16px'
               }}>
-                📷
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={(e) => setProfilePictureFile(e.target.files?.[0] || null)} 
+                {uploadingPhoto ? '⏳' : '📷'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePhotoUpload}
                   style={{ display: 'none' }}
+                  disabled={uploadingPhoto}
                 />
               </label>
             )}
@@ -308,7 +394,25 @@ const Profile = ({ user: currentUser }) => {
                     <label><span>Name</span><input type="text" value={cert.name} onChange={(e) => { const n = [...editCertificates]; n[idx].name = e.target.value; setEditCertificates(n); }} /></label>
                     <label><span>Issuer</span><input type="text" value={cert.issuer} onChange={(e) => { const n = [...editCertificates]; n[idx].issuer = e.target.value; setEditCertificates(n); }} /></label>
                     <label><span>Issue date</span><input type="date" value={cert.issueDate} onChange={(e) => { const n = [...editCertificates]; n[idx].issueDate = e.target.value; setEditCertificates(n); }} /></label>
-                    <label><span>Credential URL</span><input type="url" value={cert.credentialUrl} onChange={(e) => { const n = [...editCertificates]; n[idx].credentialUrl = e.target.value; setEditCertificates(n); }} placeholder="https://..." /></label>
+                    <label>
+                      <span>Upload Certificate (PDF or Image)</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const files = [...certificateFiles];
+                          files[idx] = e.target.files?.[0] || null;
+                          setCertificateFiles(files);
+                        }}
+                        style={{ fontSize: '0.875rem' }}
+                      />
+                      {certificateFiles[idx] && (
+                        <small style={{ display: 'block', marginTop: '0.25rem', color: '#059669' }}>
+                          ✓ {certificateFiles[idx].name}
+                        </small>
+                      )}
+                    </label>
+                    <label><span>Credential URL (optional)</span><input type="url" value={cert.credentialUrl} onChange={(e) => { const n = [...editCertificates]; n[idx].credentialUrl = e.target.value; setEditCertificates(n); }} placeholder="https://..." /></label>
                     <button type="button" className="btn btn-remove" onClick={() => setEditCertificates(editCertificates.filter((_, i) => i !== idx))}><FiTrash2 /> Remove</button>
                   </div>
                 ))}
@@ -320,16 +424,34 @@ const Profile = ({ user: currentUser }) => {
                 </div>
               </form>
             )}
-            
+
             {!isOwnProfile && (
               <div className="profile-actions">
-                {!isConnected && (
+                {connectionStatus === 'NOT_CONNECTED' && (
                   <button onClick={handleConnect} className="btn btn-primary">
                     <FiUserPlus /> Connect
                   </button>
                 )}
-                {isConnected && (
+                {connectionStatus === 'REQUEST_SENT' && (
+                  <button className="btn" disabled style={{ opacity: 0.7 }}>
+                    <FiClock /> Request Sent
+                  </button>
+                )}
+                {connectionStatus === 'REQUEST_RECEIVED' && (
                   <>
+                    <button onClick={handleAcceptRequest} className="btn btn-primary">
+                      <FiCheck /> Accept
+                    </button>
+                    <button onClick={handleDeclineRequest} className="btn btn-danger" style={{ marginLeft: '4px' }}>
+                      <FiX /> Decline
+                    </button>
+                  </>
+                )}
+                {connectionStatus === 'CONNECTED' && (
+                  <>
+                    <button className="btn btn-success" disabled style={{ opacity: 0.8 }}>
+                      <FiCheck /> Connected
+                    </button>
                     <button onClick={startVideoCall} className="btn btn-primary">
                       <FiVideo /> Video Call
                     </button>
@@ -348,9 +470,12 @@ const Profile = ({ user: currentUser }) => {
                     </button>
                   </>
                 )}
+                {connectionStatus === 'loading' && (
+                  <button className="btn btn-primary" disabled>...</button>
+                )}
                 {profileUser.role === 'mentor' && currentUser.role === 'student' && (
-                  <button onClick={handleRequestMentor} className="btn" disabled={requestSent}>
-                    {requestSent ? 'Request Sent' : 'Request Mentor'}
+                  <button onClick={handleRequestMentor} className="btn">
+                    Request Mentor
                   </button>
                 )}
               </div>
@@ -384,14 +509,40 @@ const Profile = ({ user: currentUser }) => {
                 {profileUser.certificates.map((cert, index) => (
                   <div key={index} className="certificate-item">
                     {cert.image && (
-                      <img src={cert.image} alt={cert.name} className="certificate-image" />
+                      <>
+                        {cert.image.toLowerCase().endsWith('.pdf') ? (
+                          <div style={{
+                            padding: '1rem',
+                            background: '#f3f4f6',
+                            borderRadius: '4px',
+                            textAlign: 'center',
+                            marginBottom: '0.5rem'
+                          }}>
+                            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📄</div>
+                            <a
+                              href={resolveMediaUrl(cert.image)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: '#2563eb',
+                                textDecoration: 'none',
+                                fontSize: '0.875rem'
+                              }}
+                            >
+                              View PDF Certificate
+                            </a>
+                          </div>
+                        ) : (
+                          <img src={resolveMediaUrl(cert.image)} alt={cert.name} className="certificate-image" />
+                        )}
+                      </>
                     )}
                     <h3>{cert.name}</h3>
                     <p>{cert.issuer}</p>
                     <p className="date">{formatDate(cert.issueDate)}</p>
                     {cert.credentialUrl && (
                       <a href={cert.credentialUrl} target="_blank" rel="noopener noreferrer">
-                        View Credential
+                        View External Credential
                       </a>
                     )}
                   </div>
@@ -434,7 +585,7 @@ const Profile = ({ user: currentUser }) => {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

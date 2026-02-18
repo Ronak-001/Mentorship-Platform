@@ -12,7 +12,14 @@ const CreatePost = ({ user, onPostCreated }) => {
 
   const handleFileChange = (e) => {
     setFiles(Array.from(e.target.files));
-    const fileType = e.target.files[0]?.type.startsWith('image/') ? 'image' : 'video';
+    const file = e.target.files[0];
+    if (!file) return;
+
+    let fileType = 'text';
+    if (file.type.startsWith('image/')) fileType = 'image';
+    else if (file.type.startsWith('video/')) fileType = 'video';
+    else fileType = 'blog';
+
     setType(fileType);
   };
 
@@ -24,7 +31,7 @@ const CreatePost = ({ user, onPostCreated }) => {
     const formData = new FormData();
     formData.append('content', content);
     formData.append('type', type);
-    
+
     files.forEach(file => {
       formData.append('media', file);
     });
@@ -58,7 +65,7 @@ const CreatePost = ({ user, onPostCreated }) => {
             rows="3"
           />
         </div>
-        
+
         {files.length > 0 && (
           <div className="post-preview">
             {files.map((file, index) => (
@@ -87,7 +94,7 @@ const CreatePost = ({ user, onPostCreated }) => {
             ))}
           </div>
         )}
-        
+
         <div className="post-actions">
           <label className="file-label">
             <FiImage /> Photo

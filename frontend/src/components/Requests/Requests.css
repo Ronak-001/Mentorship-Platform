@@ -1,0 +1,78 @@
+.requests-container {
+    padding-top: 1rem;
+}
+
+.requests-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: #1f2937;
+}
+
+.requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.request-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+}
+
+.request-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+    min-width: 0;
+}
+
+.request-user-details {
+    min-width: 0;
+}
+
+.request-user-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.request-user-role {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    margin: 0.125rem 0 0;
+    text-transform: capitalize;
+}
+
+.request-user-bio {
+    font-size: 0.8125rem;
+    color: #9ca3af;
+    margin: 0.25rem 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.request-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}

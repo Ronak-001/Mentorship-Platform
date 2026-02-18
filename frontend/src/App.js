@@ -15,6 +15,7 @@ import Groups from './components/Groups/Groups';
 import GroupDetail from './components/Groups/GroupDetail';
 import VideoCall from './components/VideoCall/VideoCall';
 import Discover from './components/Discover/Discover';
+import Requests from './components/Requests/Requests';
 
 // Set axios default base URL
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -109,6 +110,10 @@ function App() {
           <Route
             path="/discover"
             element={user ? <Discover user={user} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/requests"
+            element={user ? <Requests user={user} /> : <Navigate to="/login" />}
           />
           <Route
             path="/"

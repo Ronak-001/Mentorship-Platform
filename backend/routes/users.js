@@ -3,27 +3,14 @@ const User = require('../models/User');
 const Group = require('../models/Group');
 const auth = require('../middleware/auth');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { uploadToCloudinary } = require('../config/cloudinary');
 const router = express.Router();
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
+// Use memory storage — files stay in buffer for Cloudinary upload
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
-
-const upload = multer({ storage });
 
 // Get all users (for discovery)
 router.get('/', auth, async (req, res) => {
@@ -34,6 +21,34 @@ router.get('/', auth, async (req, res) => {
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Get my received connection requests (populated with sender info)
+// IMPORTANT: This MUST be defined before GET /:id to avoid Express matching 'connection-requests' as :id
+router.get('/connection-requests', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Populate manually to handle any corrupt IDs gracefully
+    const populatedRequests = [];
+    for (const reqId of (user.receivedRequests || [])) {
+      try {
+        const sender = await User.findById(reqId).select('name profilePicture role bio');
+        if (sender) populatedRequests.push(sender);
+      } catch (e) {
+        // Skip invalid IDs
+      }
+    }
+
+    res.json(populatedRequests);
+  } catch (error) {
+    console.error('Connection requests error:', error.message);
+    res.status(500).json({ message: 'Server error fetching connection requests' });
   }
 });
 
@@ -52,11 +67,54 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// Update user profile
-router.put('/:id', auth, upload.fields([
-  { name: 'profilePicture', maxCount: 1 },
-  { name: 'coverPhoto', maxCount: 1 }
-]), async (req, res) => {
+// Upload profile photo instantly (standalone, no full form save needed)
+router.patch('/profile-photo', auth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    const result = await uploadToCloudinary(req.file.buffer, {
+      resource_type: 'image',
+      folder: 'mentorship-platform/profiles',
+    });
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { profilePicture: result.secure_url } },
+      { new: true }
+    ).select('-password');
+    console.log('Profile photo uploaded:', result.secure_url);
+    res.json(user);
+  } catch (error) {
+    console.error('Error uploading profile photo:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Upload cover photo instantly
+router.patch('/cover-photo', auth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    const result = await uploadToCloudinary(req.file.buffer, {
+      resource_type: 'image',
+      folder: 'mentorship-platform/covers',
+    });
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { coverPhoto: result.secure_url } },
+      { new: true }
+    ).select('-password');
+    console.log('Cover photo uploaded:', result.secure_url);
+    res.json(user);
+  } catch (error) {
+    console.error('Error uploading cover photo:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update user profile — uploads images to Cloudinary
+router.put('/:id', auth, upload.any(), async (req, res) => {
   try {
     if (req.user._id.toString() !== req.params.id) {
       return res.status(403).json({ message: 'Not authorized' });
@@ -65,22 +123,43 @@ router.put('/:id', auth, upload.fields([
     const updates = { ...req.body };
     delete updates.password;
 
-    // Handle profilePicture upload
-    if (req.files?.profilePicture) {
-      updates.profilePicture = `/uploads/${req.files.profilePicture[0].filename}`;
+    console.log('Update profile request received for user:', req.params.id);
+    if (req.files) {
+      console.log('Files received:', req.files.map(f => ({
+        fieldname: f.fieldname,
+        originalname: f.originalname,
+        mimetype: f.mimetype
+      })));
     }
 
-    // Handle coverPhoto upload
-    if (req.files?.coverPhoto) {
-      updates.coverPhoto = `/uploads/${req.files.coverPhoto[0].filename}`;
+    // Handle profilePicture upload → Cloudinary
+    const profilePicFile = req.files?.find(f => f.fieldname === 'profilePicture');
+    if (profilePicFile) {
+      const result = await uploadToCloudinary(profilePicFile.buffer, {
+        resource_type: 'image',
+        folder: 'mentorship-platform/profiles',
+      });
+      updates.profilePicture = result.secure_url;
+      console.log('Profile picture uploaded to Cloudinary:', result.secure_url);
+    }
+
+    // Handle coverPhoto upload → Cloudinary
+    const coverFile = req.files?.find(f => f.fieldname === 'coverPhoto');
+    if (coverFile) {
+      const result = await uploadToCloudinary(coverFile.buffer, {
+        resource_type: 'image',
+        folder: 'mentorship-platform/covers',
+      });
+      updates.coverPhoto = result.secure_url;
+      console.log('Cover photo uploaded to Cloudinary:', result.secure_url);
     }
 
     // Convert comma-separated skills string to array
     if (typeof updates.skills === 'string') {
       updates.skills = updates.skills.split(',').map(s => s.trim()).filter(Boolean);
     }
-    // Parse experience, education, certificates (sent as JSON strings from form)
-    ['experience', 'education', 'certificates'].forEach(field => {
+    // Parse experience, education (sent as JSON strings from form)
+    ['experience', 'education'].forEach(field => {
       if (typeof updates[field] === 'string' && updates[field]) {
         try {
           updates[field] = JSON.parse(updates[field]);
@@ -90,6 +169,36 @@ router.put('/:id', auth, upload.fields([
       }
     });
 
+    // Parse certificatesData
+    if (typeof updates.certificatesData === 'string' && updates.certificatesData) {
+      try {
+        updates.certificates = JSON.parse(updates.certificatesData);
+      } catch (e) {
+        updates.certificates = [];
+      }
+      delete updates.certificatesData;
+    }
+
+    // Handle certificate file uploads → Cloudinary
+    if (req.files && Array.isArray(req.files)) {
+      if (!updates.certificates) {
+        updates.certificates = [];
+      }
+
+      for (let idx = 0; idx < updates.certificates.length; idx++) {
+        const certFile = req.files.find(f => f.fieldname === `certificate_file_${idx}`);
+        if (certFile) {
+          const resourceType = certFile.mimetype.includes('pdf') ? 'raw' : 'image';
+          const result = await uploadToCloudinary(certFile.buffer, {
+            resource_type: resourceType,
+            folder: 'mentorship-platform/certificates',
+          });
+          updates.certificates[idx].image = result.secure_url;
+          console.log(`Certificate ${idx} uploaded to Cloudinary:`, result.secure_url);
+        }
+      }
+    }
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { $set: updates },
@@ -98,147 +207,154 @@ router.put('/:id', auth, upload.fields([
 
     res.json(user);
   } catch (error) {
+    console.error('Error updating profile:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ message: error.message });
   }
 });
 
+
+
+
 // Send connection request
 router.post('/:id/connect', auth, async (req, res) => {
   try {
-    const recipient = await User.findById(req.params.id);
-    const sender = await User.findById(req.user._id);
+    const recipientId = req.params.id;
+    const senderId = req.user._id.toString();
+
+    if (recipientId === senderId) {
+      return res.status(400).json({ message: 'Cannot connect with yourself' });
+    }
+
+    const [sender, recipient] = await Promise.all([
+      User.findById(senderId),
+      User.findById(recipientId)
+    ]);
 
     if (!recipient) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (recipient._id.toString() === sender._id.toString()) {
-      return res.status(400).json({ message: 'Cannot connect with yourself' });
+    // Already connected? Return current status (not an error)
+    if (sender.connections.map(c => c.toString()).includes(recipientId)) {
+      return res.json({ message: 'Already connected', status: 'CONNECTED' });
     }
 
-    // Check if already connected
-    if (sender.connections.includes(recipient._id)) {
-      return res.status(400).json({ message: 'Already connected' });
+    // Already sent? Return current status (not an error)
+    if (sender.sentRequests.map(c => c.toString()).includes(recipientId)) {
+      return res.json({ message: 'Connection request already sent', status: 'REQUEST_SENT' });
     }
 
-    // Initialize connectionRequests if it doesn't exist
-    if (!recipient.connectionRequests) {
-      recipient.connectionRequests = [];
+    // Did THEY send US a request? If so, auto-accept
+    if (sender.receivedRequests.map(c => c.toString()).includes(recipientId)) {
+      // Auto-accept: both sides become connected
+      sender.receivedRequests = sender.receivedRequests.filter(id => id.toString() !== recipientId);
+      recipient.sentRequests = recipient.sentRequests.filter(id => id.toString() !== senderId);
+      if (!sender.connections.map(c => c.toString()).includes(recipientId)) {
+        sender.connections.push(recipientId);
+      }
+      if (!recipient.connections.map(c => c.toString()).includes(senderId)) {
+        recipient.connections.push(senderId);
+      }
+      await Promise.all([sender.save(), recipient.save()]);
+      return res.json({ message: 'Connected!', status: 'CONNECTED' });
     }
 
-    // Check if request already exists
-    const existingRequest = recipient.connectionRequests.find(
-      req => req.sender.toString() === sender._id.toString() && req.status === 'pending'
-    );
+    // Send new request
+    sender.sentRequests.push(recipientId);
+    recipient.receivedRequests.push(senderId);
+    await Promise.all([sender.save(), recipient.save()]);
 
-    if (existingRequest) {
-      return res.status(400).json({ message: 'Connection request already sent' });
-    }
-
-    // Create connection request
-    recipient.connectionRequests.push({
-      sender: sender._id,
-      status: 'pending'
-    });
-    await recipient.save();
-
-    res.json({ message: 'Connection request sent successfully' });
+    res.json({ message: 'Connection request sent successfully', status: 'REQUEST_SENT' });
   } catch (error) {
     console.error('Connection request error:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-
-// Get connection requests
-router.get('/connection-requests', auth, async (req, res) => {
+// Get connection status with a specific user
+router.get('/:id/connection-status', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const targetId = req.params.id;
+    const me = await User.findById(req.user._id);
 
-    // Handle case where connectionRequests field doesn't exist yet
-    if (!user.connectionRequests || user.connectionRequests.length === 0) {
-      return res.json([]);
+    if (me.connections.map(c => c.toString()).includes(targetId)) {
+      return res.json({ status: 'CONNECTED' });
     }
-
-    // Manually populate and filter out invalid requests
-    const validRequests = [];
-    for (const request of user.connectionRequests) {
-      if (request.status === 'pending') {
-        try {
-          const sender = await User.findById(request.sender).select('name profilePicture role bio');
-          if (sender) {
-            validRequests.push({
-              _id: request._id,
-              sender: sender,
-              status: request.status,
-              createdAt: request.createdAt
-            });
-          }
-        } catch (err) {
-          // Skip invalid requests
-          console.log('Skipping invalid request:', err.message);
-        }
-      }
+    if (me.sentRequests.map(c => c.toString()).includes(targetId)) {
+      return res.json({ status: 'REQUEST_SENT' });
     }
-
-    res.json(validRequests);
+    if (me.receivedRequests.map(c => c.toString()).includes(targetId)) {
+      return res.json({ status: 'REQUEST_RECEIVED' });
+    }
+    res.json({ status: 'NOT_CONNECTED' });
   } catch (error) {
-    console.error('Connection requests error:', error.message);
-    console.error('Stack:', error.stack);
     res.status(500).json({ message: error.message });
   }
 });
+
+
 
 // Accept connection request
-router.post('/connection-requests/:requestId/accept', auth, async (req, res) => {
+router.post('/:id/accept', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    const request = user.connectionRequests.id(req.params.requestId);
+    const senderId = req.params.id;
+    const myId = req.user._id.toString();
 
-    if (!request) {
-      return res.status(404).json({ message: 'Request not found' });
+    const [me, sender] = await Promise.all([
+      User.findById(myId),
+      User.findById(senderId)
+    ]);
+
+    if (!sender) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    if (request.status !== 'pending') {
-      return res.status(400).json({ message: 'Request already processed' });
+    // Verify the request exists
+    if (!me.receivedRequests.map(c => c.toString()).includes(senderId)) {
+      return res.status(400).json({ message: 'No pending request from this user' });
     }
 
-    // Update request status
-    request.status = 'accepted';
+    // Remove from request arrays
+    me.receivedRequests = me.receivedRequests.filter(id => id.toString() !== senderId);
+    sender.sentRequests = sender.sentRequests.filter(id => id.toString() !== myId);
 
     // Add to connections
-    if (!user.connections.includes(request.sender)) {
-      user.connections.push(request.sender);
+    if (!me.connections.map(c => c.toString()).includes(senderId)) {
+      me.connections.push(senderId);
     }
-    await user.save();
-
-    // Add to sender's connections
-    const sender = await User.findById(request.sender);
-    if (sender && !sender.connections.includes(user._id)) {
-      sender.connections.push(user._id);
-      await sender.save();
+    if (!sender.connections.map(c => c.toString()).includes(myId)) {
+      sender.connections.push(myId);
     }
 
-    res.json({ message: 'Connection request accepted' });
+    await Promise.all([me.save(), sender.save()]);
+    res.json({ message: 'Connection request accepted', status: 'CONNECTED' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Reject connection request
-router.post('/connection-requests/:requestId/reject', auth, async (req, res) => {
+// Decline connection request
+router.post('/:id/decline', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    const request = user.connectionRequests.id(req.params.requestId);
+    const senderId = req.params.id;
+    const myId = req.user._id.toString();
 
-    if (!request) {
-      return res.status(404).json({ message: 'Request not found' });
+    const [me, sender] = await Promise.all([
+      User.findById(myId),
+      User.findById(senderId)
+    ]);
+
+    if (!sender) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    request.status = 'rejected';
-    await user.save();
+    // Remove from both sides
+    me.receivedRequests = me.receivedRequests.filter(id => id.toString() !== senderId);
+    sender.sentRequests = sender.sentRequests.filter(id => id.toString() !== myId);
 
-    res.json({ message: 'Connection request rejected' });
+    await Promise.all([me.save(), sender.save()]);
+    res.json({ message: 'Connection request declined', status: 'DECLINED' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

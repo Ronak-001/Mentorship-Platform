@@ -8,7 +8,7 @@ const postSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true
+    default: ''
   },
   type: {
     type: String,
@@ -17,7 +17,8 @@ const postSchema = new mongoose.Schema({
   },
   media: [{
     url: String,
-    type: String
+    public_id: String,
+    type: { type: String }
   }],
   likes: [{
     type: mongoose.Schema.Types.ObjectId,

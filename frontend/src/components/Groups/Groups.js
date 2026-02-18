@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import CreateGroup from './CreateGroup';
+import { resolveMediaUrl } from '../../utils/url';
 import './Groups.css';
 
 const Groups = ({ user }) => {
@@ -63,7 +64,7 @@ const Groups = ({ user }) => {
               >
                 {group.groupPicture && (
                   <img
-                    src={`http://localhost:5000${group.groupPicture}`}
+                    src={resolveMediaUrl(group.groupPicture)}
                     alt={group.name}
                     className="group-image"
                   />

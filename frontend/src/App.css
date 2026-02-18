@@ -55,6 +55,23 @@
   cursor: not-allowed;
 }
 
+.btn-success {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
+.btn-danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
 /* Inputs */
 .input {
   width: 100%;

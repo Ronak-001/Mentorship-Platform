@@ -8,6 +8,16 @@ const path = require('path');
 const fs = require('fs');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+// SURVIVAL PING - TO PROVE SERVER RESTARTED
+try {
+  fs.writeFileSync(path.join(__dirname, 'server_alive.txt'), 'Server started at ' + new Date().toISOString());
+} catch (e) {
+  console.error('Survival ping failed:', e);
+}
 require('dotenv').config();
 
 const app = express();
@@ -32,7 +42,9 @@ const io = socketIo(server, {
 });
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(cors(corsOptions));
 app.use(morgan(isProd ? 'combined' : 'dev'));
 app.use(express.json());
@@ -47,7 +59,7 @@ app.use('/api', rateLimit({
 }));
 
 // Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // MongoDB Connection with better timeout handling
 const connectDB = async () => {
@@ -97,8 +109,30 @@ if (isProd && fs.existsSync(frontendPath)) {
 // Error handler (keep last)
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ message: 'Internal server error' });
+  const errorData = `
+--- GLOBAL ERROR HANDLER ---
+Time: ${new Date().toISOString()}
+Method: ${req.method}
+URL: ${req.originalUrl}
+Body Keys: ${req.body ? Object.keys(req.body) : 'None'}
+Error Message: ${err.message}
+Error Stack: ${err.stack}
+----------------------------
+`;
+  console.error(errorData);
+
+  // Write to a file so I can read it even if the user can't see the terminal
+  try {
+    fs.appendFileSync(path.join(__dirname, 'error.log'), errorData);
+  } catch (e) {
+    console.error('Failed to write to error.log:', e);
+  }
+
+  res.status(500).json({
+    message: 'Internal server error',
+    error: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
 });
 
 // Socket.io for real-time chat and video calls
