@@ -8,7 +8,19 @@ const router = express.Router();
 // Use memory storage instead of disk — files stay in buffer for Cloudinary upload
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max overall
+  fileFilter: (req, file, cb) => {
+    // Documents (PDFs, etc.) limited to 2MB
+    if (!file.mimetype.startsWith('image/') && !file.mimetype.startsWith('video/')) {
+      const MAX_DOC_SIZE = 2 * 1024 * 1024; // 2MB
+      // Check Content-Length header as an early estimate
+      const contentLength = parseInt(req.headers['content-length'], 10);
+      if (contentLength && contentLength > MAX_DOC_SIZE) {
+        return cb(new Error('Document files must be under 2MB'), false);
+      }
+    }
+    cb(null, true);
+  }
 });
 
 /**
@@ -50,13 +62,24 @@ router.post('/', auth, upload.array('media', 10), async (req, res) => {
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const { resourceType, mediaType } = getMediaType(file.mimetype);
+
+        // Enforce 2MB limit for documents (non-image, non-video)
+        if (mediaType === 'blog' && file.size > 2 * 1024 * 1024) {
+          return res.status(400).json({ message: 'Document files must be under 2MB' });
+        }
+        // Sanitize original filename for Cloudinary public_id
+        const originalName = file.originalname || 'document';
+        const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+
         const result = await uploadToCloudinary(file.buffer, {
           resource_type: resourceType,
+          public_id: `posts/${nameWithoutExt}_${Date.now()}`,
         });
         media.push({
           url: result.secure_url,
           public_id: result.public_id,
           type: mediaType,
+          originalName: file.originalname,
         });
       }
     }

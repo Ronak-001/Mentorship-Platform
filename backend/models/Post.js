@@ -18,7 +18,8 @@ const postSchema = new mongoose.Schema({
   media: [{
     url: String,
     public_id: String,
-    type: { type: String }
+    type: { type: String },
+    originalName: String
   }],
   likes: [{
     type: mongoose.Schema.Types.ObjectId,

@@ -22,6 +22,13 @@ const uploadToCloudinary = (fileBuffer, options = {}) => {
             folder: options.folder || 'mentorship-platform',
         };
 
+        // Preserve original filename if provided
+        if (options.public_id) {
+            uploadOptions.public_id = options.public_id;
+            uploadOptions.unique_filename = false;
+            uploadOptions.overwrite = true;
+        }
+
         const uploadStream = cloudinary.uploader.upload_stream(
             uploadOptions,
             (error, result) => {

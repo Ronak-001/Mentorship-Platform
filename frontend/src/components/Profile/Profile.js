@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiVideo, FiMessageCircle, FiUserPlus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX } from 'react-icons/fi';
+import { FiVideo, FiMessageCircle, FiUserPlus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText } from 'react-icons/fi';
 import { resolveMediaUrl } from '../../utils/url';
 import Avatar from '../Avatar';
 import './Profile.css';
@@ -31,6 +31,7 @@ const Profile = ({ user: currentUser }) => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [certificateFiles, setCertificateFiles] = useState([]);
+  const [viewingCert, setViewingCert] = useState(null);
 
   // Instant profile photo upload
   const handleProfilePhotoUpload = async (e) => {
@@ -508,27 +509,23 @@ const Profile = ({ user: currentUser }) => {
                   <div key={index} className="certificate-item">
                     {cert.image && (
                       <>
-                        {cert.image.toLowerCase().endsWith('.pdf') ? (
+                        {cert.image.toLowerCase().endsWith('.pdf') || (cert.image.includes('cloudinary') && !cert.image.match(/\.(jpg|jpeg|png|gif|webp)$/i)) ? (
                           <div style={{
                             padding: '1rem',
                             background: '#f3f4f6',
-                            borderRadius: '4px',
+                            borderRadius: '8px',
                             textAlign: 'center',
-                            marginBottom: '0.5rem'
+                            marginBottom: '0.5rem',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px'
                           }}>
-                            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📄</div>
-                            <a
-                              href={resolveMediaUrl(cert.image)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                color: '#2563eb',
-                                textDecoration: 'none',
-                                fontSize: '0.875rem'
-                              }}
+                            <FiFileText size={36} color="#667eea" />
+                            <button
+                              onClick={() => setViewingCert({ url: cert.image, name: cert.name || 'Certificate' })}
+                              className="btn btn-primary"
+                              style={{ fontSize: '0.875rem', padding: '6px 16px' }}
                             >
-                              View PDF Certificate
-                            </a>
+                              View Certificate
+                            </button>
                           </div>
                         ) : (
                           <img src={resolveMediaUrl(cert.image)} alt={cert.name} className="certificate-image" />
@@ -583,6 +580,50 @@ const Profile = ({ user: currentUser }) => {
           </div>
         </div>
       </div>
+      {/* Certificate Viewer Modal */}
+      {viewingCert && (
+        <div
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.85)', zIndex: 9999,
+            display: 'flex', flexDirection: 'column'
+          }}
+          onClick={() => setViewingCert(null)}
+        >
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '12px 20px', color: 'white'
+          }} onClick={(e) => e.stopPropagation()}>
+            <span style={{ fontWeight: 600, fontSize: '1rem' }}>
+              {viewingCert.name}
+            </span>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <a
+                href={resolveMediaUrl(viewingCert.url)}
+                download={viewingCert.name || 'certificate'}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'white', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', textDecoration: 'none' }}
+              >
+                <FiDownload /> Download
+              </a>
+              <button
+                onClick={() => setViewingCert(null)}
+                style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '4px' }}
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+          </div>
+          <div style={{ flex: 1, padding: '0 20px 20px' }} onClick={(e) => e.stopPropagation()}>
+            <iframe
+              src={`https://docs.google.com/gview?url=${encodeURIComponent(resolveMediaUrl(viewingCert.url))}&embedded=true`}
+              title={viewingCert.name || 'Certificate viewer'}
+              style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px', background: 'white' }}
+            />
+          </div>
+        </div>
+      )}
     </div >
   );
 };
