@@ -1,0 +1,8 @@
+# ===================================
+# System Requirements
+# ===================================
+# Install these before setting up the project.
+
+Node.js    >= 18.x   (https://nodejs.org/)
+npm        >= 9.x    (comes with Node.js)
+Git        >= 2.x    (https://git-scm.com/)
