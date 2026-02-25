@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiVideo, FiMessageCircle, FiUserPlus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText } from 'react-icons/fi';
+import { FiVideo, FiMessageCircle, FiUserPlus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText, FiActivity, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { resolveMediaUrl } from '../../utils/url';
 import Avatar from '../Avatar';
+import PostCard from '../Feed/PostCard';
 import './Profile.css';
 
 const emptyExperience = () => ({ title: '', company: '', startDate: '', endDate: '', description: '', current: false });
@@ -32,6 +33,12 @@ const Profile = ({ user: currentUser }) => {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [certificateFiles, setCertificateFiles] = useState([]);
   const [viewingCert, setViewingCert] = useState(null);
+
+  // Activity section state
+  const [showActivity, setShowActivity] = useState(false);
+  const [activityPosts, setActivityPosts] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityLoaded, setActivityLoaded] = useState(false);
 
   // Instant profile photo upload
   const handleProfilePhotoUpload = async (e) => {
@@ -97,8 +104,41 @@ const Profile = ({ user: currentUser }) => {
     }
   }, [id, currentUser]);
 
+  const fetchActivity = useCallback(async () => {
+    setActivityLoading(true);
+    try {
+      const res = await axios.get(`/posts/user/${id}`);
+      setActivityPosts(res.data);
+      setActivityLoaded(true);
+    } catch (error) {
+      console.error('Error fetching activity:', error);
+    } finally {
+      setActivityLoading(false);
+    }
+  }, [id]);
+
+  const toggleActivity = () => {
+    const next = !showActivity;
+    setShowActivity(next);
+    if (next && !activityLoaded) {
+      fetchActivity();
+    }
+  };
+
+  const handlePostUpdate = (updatedPost) => {
+    setActivityPosts(prev => prev.map(p => p._id === updatedPost._id ? updatedPost : p));
+  };
+
+  const handlePostDelete = (postId) => {
+    setActivityPosts(prev => prev.filter(p => p._id !== postId));
+  };
+
   useEffect(() => {
     fetchProfile();
+    // Reset activity when profile changes
+    setShowActivity(false);
+    setActivityPosts([]);
+    setActivityLoaded(false);
   }, [fetchProfile]);
 
   const handleConnect = async () => {
@@ -573,6 +613,47 @@ const Profile = ({ user: currentUser }) => {
               ))
             ) : (
               <p>No education added yet</p>
+            )}
+          </div>
+
+          {/* ─── Activity Section (LinkedIn-style) ─── */}
+          <div className="profile-section glass activity-section">
+            <div className="activity-header" onClick={toggleActivity}>
+              <div className="activity-header-left">
+                <FiActivity className="activity-icon" />
+                <h2>Activity</h2>
+                <span className="activity-count">
+                  {activityLoaded ? `${activityPosts.length} post${activityPosts.length !== 1 ? 's' : ''}` : ''}
+                </span>
+              </div>
+              <button className="activity-toggle-btn">
+                {showActivity ? <FiChevronUp /> : <FiChevronDown />}
+              </button>
+            </div>
+
+            {showActivity && (
+              <div className="activity-content">
+                {activityLoading ? (
+                  <div className="activity-loading">Loading activity...</div>
+                ) : activityPosts.length === 0 ? (
+                  <div className="activity-empty">
+                    <FiFileText size={32} />
+                    <p>{isOwnProfile ? "You haven't posted anything yet" : 'No activity yet'}</p>
+                  </div>
+                ) : (
+                  <div className="activity-posts">
+                    {activityPosts.map(post => (
+                      <PostCard
+                        key={post._id}
+                        post={post}
+                        currentUser={currentUser}
+                        onUpdate={handlePostUpdate}
+                        onDelete={handlePostDelete}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

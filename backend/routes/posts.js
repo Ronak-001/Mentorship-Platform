@@ -52,6 +52,20 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Get all posts by a specific user (for Activity section)
+router.get('/user/:userId', auth, async (req, res) => {
+  try {
+    const posts = await Post.find({ author: req.params.userId })
+      .populate('author', 'name profilePicture role')
+      .populate('likes', 'name')
+      .populate('comments.user', 'name profilePicture')
+      .sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Create post — uploads media to Cloudinary
 router.post('/', auth, upload.array('media', 10), async (req, res) => {
   try {
