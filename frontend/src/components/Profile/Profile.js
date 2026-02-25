@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiVideo, FiMessageCircle, FiUserPlus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText, FiActivity, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiVideo, FiMessageCircle, FiUserPlus, FiUserMinus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText, FiActivity, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { resolveMediaUrl } from '../../utils/url';
 import Avatar from '../Avatar';
 import PostCard from '../Feed/PostCard';
@@ -34,6 +34,7 @@ const Profile = ({ user: currentUser }) => {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [certificateFiles, setCertificateFiles] = useState([]);
   const [viewingCert, setViewingCert] = useState(null);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
 
   // Activity section state
   const [showActivity, setShowActivity] = useState(false);
@@ -486,7 +487,10 @@ const Profile = ({ user: currentUser }) => {
                 )}
                 {connectionStatus === 'CONNECTED' && (
                   <>
-                    <button className="btn btn-success" disabled style={{ opacity: 0.8 }}>
+                    <button
+                      className="btn btn-success"
+                      onClick={() => setShowDisconnectConfirm(true)}
+                    >
                       <FiCheck /> Connected
                     </button>
                     <button onClick={startVideoCall} className="btn btn-primary">
@@ -506,6 +510,39 @@ const Profile = ({ user: currentUser }) => {
                       <FiMessageCircle /> Message
                     </button>
                   </>
+                )}
+
+                {/* Disconnect confirmation modal */}
+                {showDisconnectConfirm && (
+                  <div className="disconnect-modal-overlay" onClick={() => setShowDisconnectConfirm(false)}>
+                    <div className="disconnect-modal" onClick={e => e.stopPropagation()}>
+                      <p className="disconnect-modal-text">
+                        Are you sure you want to disconnect with <strong>{profileUser?.name}</strong>?
+                      </p>
+                      <div className="disconnect-modal-actions">
+                        <button
+                          className="btn btn-danger"
+                          onClick={async () => {
+                            setShowDisconnectConfirm(false);
+                            try {
+                              await axios.post(`/users/${id}/disconnect`);
+                              setConnectionStatus('NOT_CONNECTED');
+                            } catch (error) {
+                              console.error('Error disconnecting:', error);
+                            }
+                          }}
+                        >
+                          <FiUserMinus /> Disconnect
+                        </button>
+                        <button
+                          className="btn"
+                          onClick={() => setShowDisconnectConfirm(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 {connectionStatus === 'loading' && (
                   <button className="btn btn-primary" disabled>...</button>
