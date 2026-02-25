@@ -38,4 +38,4 @@ frontend/.env
 
 .github
 
-backend/.env.example
+/backend/.env.example
