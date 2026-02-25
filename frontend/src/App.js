@@ -17,6 +17,8 @@ import VideoCall from './components/VideoCall/VideoCall';
 import Discover from './components/Discover/Discover';
 import Requests from './components/Requests/Requests';
 
+import Landing from './components/Landing/Landing';
+
 // Set axios default base URL
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -72,6 +74,10 @@ function App() {
         {user && <Navbar user={user} logout={logout} />}
         <Routes>
           <Route
+            path="/"
+            element={<Landing user={user} />}
+          />
+          <Route
             path="/login"
             element={user ? <Navigate to="/feed" /> : <Login login={login} />}
           />
@@ -114,10 +120,6 @@ function App() {
           <Route
             path="/requests"
             element={user ? <Requests user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/"
-            element={user ? <Navigate to="/feed" /> : <Navigate to="/login" />}
           />
         </Routes>
       </div>

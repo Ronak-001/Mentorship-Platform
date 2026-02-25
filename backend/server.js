@@ -39,6 +39,8 @@ const io = socketIo(server, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
+  pingInterval: 25000,  // 25s — how often to ping client
+  pingTimeout: 10000,   // 10s — drop stale connections faster to prevent freezing
 });
 
 // Middleware
@@ -137,7 +139,7 @@ Error Stack: ${err.stack}
 
 // Socket.io for real-time chat and video calls
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  if (!isProd) console.log('Socket connected:', socket.id);
 
   socket.on('join-room', (roomId) => {
     socket.join(roomId);
@@ -200,7 +202,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+    if (!isProd) console.log('Socket disconnected:', socket.id);
   });
 });
 

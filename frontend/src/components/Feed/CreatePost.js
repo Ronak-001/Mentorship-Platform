@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FiImage, FiVideo, FiFileText } from 'react-icons/fi';
 import Avatar from '../Avatar';
@@ -10,17 +10,35 @@ const CreatePost = ({ user, onPostCreated }) => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // const handleFileChange = (e) => {
+  //   setFiles(Array.from(e.target.files));
+  //   const file = e.target.files[0];
+  //   if (!file) return;
+
+  //   let fileType = 'text';
+  //   if (file.type.startsWith('image/')) fileType = 'image';
+  //   else if (file.type.startsWith('video/')) fileType = 'video';
+  //   else fileType = 'blog';
+
+  //   setType(fileType);
+  // };
+
   const handleFileChange = (e) => {
-    setFiles(Array.from(e.target.files));
-    const file = e.target.files[0];
-    if (!file) return;
+    const selectedFiles = Array.from(e.target.files);
 
-    let fileType = 'text';
-    if (file.type.startsWith('image/')) fileType = 'image';
-    else if (file.type.startsWith('video/')) fileType = 'video';
-    else fileType = 'blog';
+    if (!selectedFiles.length) return;
 
-    setType(fileType);
+    const filesWithPreview = selectedFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+
+    setFiles(prev => [...prev, ...filesWithPreview]);
+
+    const firstFile = selectedFiles[0];
+    if (firstFile.type.startsWith('image/')) setType('image');
+    else if (firstFile.type.startsWith('video/')) setType('video');
+    else setType('blog');
   };
 
   const handleSubmit = async (e) => {
@@ -32,7 +50,7 @@ const CreatePost = ({ user, onPostCreated }) => {
     formData.append('content', content);
     formData.append('type', type);
 
-    files.forEach(file => {
+    files.forEach(({ file }) => {
       formData.append('media', file);
     });
 
@@ -41,6 +59,7 @@ const CreatePost = ({ user, onPostCreated }) => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       onPostCreated(res.data);
+      files.forEach(f => URL.revokeObjectURL(f.preview));
       setContent('');
       setFiles([]);
       setType('text');
@@ -51,6 +70,12 @@ const CreatePost = ({ user, onPostCreated }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      files.forEach(f => URL.revokeObjectURL(f.preview));
+    };
+  }, [files]);
 
   return (
     <div className="create-post glass">
@@ -68,24 +93,27 @@ const CreatePost = ({ user, onPostCreated }) => {
 
         {files.length > 0 && (
           <div className="post-preview">
-            {files.map((file, index) => (
+            {files.map(({ file, preview }, index) => (
               <div key={index} className="preview-item">
                 {file.type.startsWith('image/') ? (
                   <img
-                    src={URL.createObjectURL(file)}
+                    src={preview}
                     alt="Preview"
                     className="preview-image"
                   />
                 ) : (
                   <video
-                    src={URL.createObjectURL(file)}
+                    src={preview}
                     controls
                     className="preview-video"
                   />
                 )}
                 <button
                   type="button"
-                  onClick={() => setFiles(files.filter((_, i) => i !== index))}
+                  onClick={() => {
+                    URL.revokeObjectURL(files[index].preview);
+                    setFiles(prev => prev.filter((_, i) => i !== index));
+                  }}
                   className="remove-preview"
                 >
                   ×

@@ -37,4 +37,8 @@ const chatSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Performance indexes — speeds up chat list queries per user
+chatSchema.index({ participants: 1 });
+chatSchema.index({ lastMessageAt: -1 });
+
 module.exports = mongoose.model('Chat', chatSchema);

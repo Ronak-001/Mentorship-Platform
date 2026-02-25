@@ -28,24 +28,15 @@ router.get('/', auth, async (req, res) => {
 // IMPORTANT: This MUST be defined before GET /:id to avoid Express matching 'connection-requests' as :id
 router.get('/connection-requests', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    // Single query: populate all received requests at once (no N+1 loop)
+    const user = await User.findById(req.user._id)
+      .populate('receivedRequests', 'name profilePicture role bio');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Populate manually to handle any corrupt IDs gracefully
-    const populatedRequests = [];
-    for (const reqId of (user.receivedRequests || [])) {
-      try {
-        const sender = await User.findById(reqId).select('name profilePicture role bio');
-        if (sender) populatedRequests.push(sender);
-      } catch (e) {
-        // Skip invalid IDs
-      }
-    }
-
-    res.json(populatedRequests);
+    res.json(user.receivedRequests || []);
   } catch (error) {
     console.error('Connection requests error:', error.message);
     res.status(500).json({ message: 'Server error fetching connection requests' });

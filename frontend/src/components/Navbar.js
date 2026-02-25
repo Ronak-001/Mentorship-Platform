@@ -12,7 +12,7 @@ const Navbar = ({ user, logout }) => {
   };
 
   return (
-    <nav className="navbar glass">
+    <nav className="navbar glass-morphism">
       <div className="navbar-container">
         <Link to="/feed" className="navbar-logo">
           <span className="logo-text">Mentor Connect</span>

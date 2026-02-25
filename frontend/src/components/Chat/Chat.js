@@ -6,7 +6,8 @@ import { FiSend, FiVideo } from 'react-icons/fi';
 import Avatar from '../Avatar';
 import './Chat.css';
 
-const socket = io(process.env.REACT_APP_SOCKET_URL || window.location.origin);
+// Socket is created INSIDE the component lifecycle now — prevents stale sockets
+// from accumulating across page navigations (was the #1 freeze cause)
 
 const Chat = ({ user }) => {
   const { id } = useParams();
@@ -14,6 +15,7 @@ const Chat = ({ user }) => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
+  const socketRef = useRef(null);
 
   const fetchChat = useCallback(async () => {
     try {
@@ -21,14 +23,11 @@ const Chat = ({ user }) => {
       const isChatId = /^[0-9a-fA-F]{24}$/.test(id);
 
       if (isChatId) {
-        // It's a chat ID, fetch directly
         const res = await axios.get(`/chat/${id}`);
         setChat(res.data);
       } else {
-        // It's a user ID, get or create chat
         const res = await axios.post('/chat', { userId: id });
         setChat(res.data);
-        // Update URL if needed
         if (res.data._id) {
           window.history.replaceState(null, '', `/chat/${res.data._id}`);
         }
@@ -40,48 +39,65 @@ const Chat = ({ user }) => {
     }
   }, [id]);
 
-  const handleReceiveMessage = useCallback((data) => {
-    if (data.chatId === id) {
-      fetchChat();
-    }
+  useEffect(() => {
+    // Create socket once per chat session and clean up on unmount/id change
+    const socket = io(process.env.REACT_APP_SOCKET_URL || window.location.origin, {
+      transports: ['websocket'], // skip polling — faster connection
+    });
+    socketRef.current = socket;
+
+    fetchChat();
+    socket.emit('join-chat', id);
+
+    // Append new message directly to state — no DB re-fetch needed
+    socket.on('receive-message', (data) => {
+      if (data.chatId === id && data.message) {
+        setChat(prev => {
+          if (!prev) return prev;
+          // Avoid duplicate if we're the sender (we already updated optimistically)
+          const alreadyExists = prev.messages.some(m => m._id === data.message._id);
+          if (alreadyExists) return prev;
+          return { ...prev, messages: [...prev.messages, data.message] };
+        });
+      }
+    });
+
+    return () => {
+      socket.emit('leave-chat', id);
+      socket.disconnect(); // properly disconnect on navigate away
+    };
   }, [id, fetchChat]);
 
   useEffect(() => {
-    fetchChat();
-
-    socket.emit('join-chat', id);
-    socket.on('receive-message', handleReceiveMessage);
-
-    return () => {
-      socket.off('receive-message');
-      socket.emit('leave-chat', id);
-    };
-  }, [id, fetchChat, handleReceiveMessage]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [chat?.messages]);
-
-  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, [chat?.messages]);
 
   const handleSend = async (e) => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    try {
-      const res = await axios.post(`/chat/${id}/messages`, { text: message });
-      setChat(res.data);
-      setMessage('');
+    const textToSend = message;
+    setMessage('');
 
-      socket.emit('send-message', {
+    try {
+      const res = await axios.post(`/chat/${id}/messages`, { text: textToSend });
+      const newMsg = res.data.message;
+
+      // Optimistically append our own message immediately
+      setChat(prev => {
+        if (!prev) return prev;
+        return { ...prev, messages: [...prev.messages, newMsg] };
+      });
+
+      // Broadcast to other participants via socket
+      socketRef.current?.emit('send-message', {
         chatId: id,
-        text: message,
+        message: newMsg,
         sender: user
       });
     } catch (error) {
       console.error('Error sending message:', error);
+      setMessage(textToSend); // restore on failure
     }
   };
 
@@ -131,9 +147,9 @@ const Chat = ({ user }) => {
       <div className="messages-container">
         <div className="messages-list">
           {chat.messages?.map((msg, index) => {
-            const isOwn = (msg.sender._id || msg.sender.id) === (user.id || user._id);
+            const isOwn = (msg.sender._id || msg.sender.id || msg.sender) === (user.id || user._id);
             return (
-              <div key={index} className={`message ${isOwn ? 'own' : 'other'}`}>
+              <div key={msg._id || index} className={`message ${isOwn ? 'own' : 'other'}`}>
                 {!isOwn && (
                   <Avatar name={msg.sender.name} src={msg.sender.profilePicture} size="sm" className="message-avatar" />
                 )}

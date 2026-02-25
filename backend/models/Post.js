@@ -50,4 +50,8 @@ const postSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Performance indexes — prevents full collection scans on feed and profile post queries
+postSchema.index({ createdAt: -1 });
+postSchema.index({ author: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Post', postSchema);

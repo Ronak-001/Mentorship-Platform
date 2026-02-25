@@ -1,0 +1,337 @@
+/* ============================= */
+/* Global Smooth Scroll */
+/* ============================= */
+
+html {
+    scroll-behavior: smooth;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+/* ============================= */
+/* Landing Layout */
+/* ============================= */
+
+.landing-page {
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background: #0f172a;
+    color: #f8fafc;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* ============================= */
+/* Optimized Background Blobs */
+/* ============================= */
+
+.blob {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 50%;
+    z-index: 0;
+    opacity: 0.25;
+
+    /* 🔥 Aggressive performance fix */
+    opacity: 0.18;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    /* Force GPU */
+    pointer-events: none;
+
+    animation: float 25s infinite alternate ease-in-out;
+}
+
+/* .blob-1 {
+    top: -100px;
+    left: -100px;
+}
+
+.blob-2 {
+    bottom: -150px;
+    right: -50px;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    animation-delay: -5s;
+}
+
+.blob-3 {
+    top: 40%;
+    left: 30%;
+    width: 250px;
+    height: 250px;
+    background: linear-gradient(135deg, #06b6d4, #3b82f6);
+    animation-delay: -10s;
+} */
+
+@keyframes float {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    to {
+        transform: translate3d(40px, 40px, 0) scale(1.08);
+    }
+}
+
+/* ============================= */
+/* Glass Morphism (Optimized) */
+/* ============================= */
+
+.glass-morphism {
+    background: rgba(255, 255, 255, 0.06);
+
+    /* 🔥 reduce blur strength */
+    /* backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px); */
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+
+    /* contain: layout paint; */
+}
+
+/* ============================= */
+/* Navbar */
+/* ============================= */
+
+.landing-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding: 1rem 0;
+    /* backdrop-filter: blur(6px); */
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #e2e8f0;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+    color: #3b82f6;
+}
+
+/* 🔥 Content skipping for performance */
+.features-section,
+.cta-section,
+.hero-section {
+    scroll-margin-top: 100px;
+    /* content-visibility: auto;
+    contain-intrinsic-size: 1px 500px; */
+}
+
+.section-title {
+    margin-bottom: 20px;
+}
+
+/* ============================= */
+/* Hero */
+/* ============================= */
+
+.landing-content {
+    position: relative;
+    z-index: 1;
+    padding-top: 100px;
+}
+
+.hero-section {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.hero-text {
+    max-width: 800px;
+    padding: 4rem;
+    border-radius: 24px;
+}
+
+.hero-text h2 {
+    font-size: 3.5rem;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    font-weight: 800;
+}
+
+.hero-text h2 span {
+    background: linear-gradient(to right, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-text p {
+    font-size: 1.25rem;
+    color: #94a3b8;
+    margin-bottom: 2.5rem;
+}
+
+.hero-action {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+/* ============================= */
+/* Features */
+/* ============================= */
+
+.features-section {
+    padding: 6rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.feature-card {
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    text-align: center;
+    transition: transform 0.25s ease;
+    will-change: transform;
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+}
+
+/* About Section */
+.about-section {
+    padding: 6rem 2rem;
+    display: flex;
+    justify-content: center;
+    scroll-margin-top: 100px;
+}
+
+.about-container {
+    max-width: 900px;
+    width: 100%;
+    padding: 4rem;
+    border-radius: 24px;
+}
+
+.about-text h3 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.about-text h3 span {
+    background: linear-gradient(to right, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.about-text p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #94a3b8;
+    margin-bottom: 1.5rem;
+}
+
+/* ============================= */
+/* CTA */
+/* ============================= */
+
+.cta-section {
+    padding: 6rem 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.cta-content {
+    max-width: 800px;
+    width: 100%;
+    padding: 4rem;
+    border-radius: 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+
+}
+
+.btn-primary-landing {
+    margin-top: 4px;
+}
+
+/* ============================= */
+/* Buttons */
+/* ============================= */
+
+.glass-btn {
+    background: #3b82f6;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.glass-btn:hover {
+    background: #2563eb;
+    transform: scale(1.05);
+}
+
+/* ============================= */
+/* Footer */
+/* ============================= */
+
+.landing-footer {
+    padding: 3rem;
+    text-align: center;
+    color: #64748b;
+}
+
+/* ============================= */
+/* Mobile */
+/* ============================= */
+
+@media (max-width: 768px) {
+    .hero-text h2 {
+        font-size: 2.5rem;
+    }
+
+    .nav-links {
+        display: none;
+    }
+}

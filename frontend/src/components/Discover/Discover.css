@@ -1,17 +1,17 @@
 .discover-container {
   padding: 0;
-  background: #f3f4f6;
+  background: transparent;
   min-height: calc(100vh - 56px);
-  color: #1f2937;
+  color: #f8fafc;
 }
 
 .discover-title {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  margin-bottom: 1.25rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
-  color: #111827;
+  margin-bottom: 2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 .filter-buttons {
@@ -21,21 +21,21 @@
 }
 
 .filter-btn {
-  padding: 0.5rem 1rem;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  color: #4b5563;
+  padding: 0.6rem 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #e2e8f0;
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .filter-btn:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
-  color: #374151;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 .filter-btn.active {
@@ -47,22 +47,26 @@
 .users-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1.25rem;
+  gap: 1.27rem;
 }
 
 .user-card {
-  padding: 1.25rem;
+  padding: 1.5rem;
   text-align: center;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.2s, border-color 0.2s;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .user-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: #d1d5db;
+  transform: translateY(-8px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0px 15px rgba(48, 64, 179, 0.4), 0 0px 18px rgba(255, 255, 255, 0.4);
 }
 
 .user-link {
@@ -78,27 +82,31 @@
 
 .user-avatar {
   margin: 0 auto 0.75rem;
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  /* display: block; */
   border: 2px solid #e5e7eb;
 }
 
 .user-name {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #111827;
+  color: #dedfe0;
   margin-bottom: 0.2rem;
 }
 
 .user-role {
   text-transform: capitalize;
-  color: #6b7280;
+  color: #b9bcc2;
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
 }
 
 .user-bio {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #b9bcc2;
   line-height: 1.5;
 }
 

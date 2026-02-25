@@ -331,7 +331,7 @@ const Profile = ({ user: currentUser }) => {
           <div className="profile-info">
             <h1 className="profile-name">{profileUser.name}</h1>
             <p className="profile-role">{profileUser.role}</p>
-            <p className="profile-connections" style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>
+            <p className="profile-connections">
               {profileUser.connections?.length || 0} Connections
             </p>
             <p className="profile-bio">{profileUser.bio || 'No bio yet'}</p>
@@ -344,15 +344,12 @@ const Profile = ({ user: currentUser }) => {
 
             {isOwnProfile && editing && (
               <form onSubmit={handleSaveProfile} className="profile-edit-form" style={{ marginTop: '1rem', textAlign: 'left' }}>
-                <p style={{ fontSize: '12px', color: '#666', marginBottom: '1rem' }}>
-                  💡 Tip: Click on your profile picture or cover photo to change them
-                </p>
                 <label>
-                  <span>Bio</span>
+                  <span className="bio-label" >Bio</span>
                   <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} rows={3} />
                 </label>
                 <label>
-                  <span>Skills (comma-separated)</span>
+                  <span className="skill-label">Skills (comma-separated)</span>
                   <input type="text" value={editSkills} onChange={(e) => setEditSkills(e.target.value)} placeholder="e.g. JavaScript, React, Node.js" />
                 </label>
 

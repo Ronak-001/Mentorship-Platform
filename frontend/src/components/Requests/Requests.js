@@ -67,7 +67,7 @@ const Requests = ({ user }) => {
                 {requests.length === 0 ? (
                     <div className="empty-state glass">
                         <p>No pending connection requests.</p>
-                        <Link to="/discover" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                        <Link to="/discover" className="btn btn-primary-request">
                             Discover People
                         </Link>
                     </div>
@@ -91,7 +91,7 @@ const Requests = ({ user }) => {
                                     <div className="request-actions">
                                         <button
                                             onClick={() => handleAccept(senderId)}
-                                            className="btn btn-primary"
+                                            className="btn btn-primary-request"
                                             disabled={!!action}
                                         >
                                             {action === 'accepting' ? '...' : <><FiCheck /> Accept</>}

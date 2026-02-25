@@ -1,39 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import CreatePost from './CreatePost';
 import PostCard from './PostCard';
 import './Feed.css';
 
+
+
 const Feed = ({ user }) => {
+  const [error, setError] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
 
-  const fetchPosts = async () => {
+
+  const fetchPosts = useCallback(async () => {
     try {
+      setError(null);        // reset previous errors
+      setLoading(true);      // important if you ever re-fetch
+
       const res = await axios.get('/posts');
       setPosts(res.data);
+
     } catch (error) {
       console.error('Error fetching posts:', error);
+      setError('Failed to load feed');
+
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const addPost = (newPost) => {
-    setPosts([newPost, ...posts]);
+    setPosts(prev => [newPost, ...prev]);
   };
 
   const updatePost = (updatedPost) => {
-    setPosts(posts.map(p => p._id === updatedPost._id ? updatedPost : p));
+    setPosts(prev =>
+      prev.map(p => p._id === updatedPost._id ? updatedPost : p)
+    );
   };
 
   const removePost = (postId) => {
-    setPosts(posts.filter(p => p._id !== postId));
+    setPosts(prev => prev.filter(p => p._id !== postId));
   };
+
+  if (error) {
+    return (
+      <div className="container">
+        <div className="error">{error}</div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
