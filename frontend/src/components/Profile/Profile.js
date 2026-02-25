@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FiVideo, FiMessageCircle, FiUserPlus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText, FiActivity, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { resolveMediaUrl } from '../../utils/url';
@@ -19,6 +19,7 @@ const formatDate = (d) => {
 
 const Profile = ({ user: currentUser }) => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('NOT_CONNECTED');
@@ -495,7 +496,7 @@ const Profile = ({ user: currentUser }) => {
                       onClick={async () => {
                         try {
                           const res = await axios.post('/chat', { userId: id });
-                          window.location.href = `/chat/${res.data._id}`;
+                          navigate(`/chat/${res.data._id}`);
                         } catch (error) {
                           console.error('Error creating chat:', error);
                         }
