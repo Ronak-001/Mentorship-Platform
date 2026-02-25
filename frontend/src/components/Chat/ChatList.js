@@ -71,7 +71,6 @@ const ChatList = ({ user }) => {
   }).filter(Boolean);
 
   const filteredConnections = connections.filter(c => {
-    const cId = c._id || c.id;
     if (!searchQuery.trim()) return true;
     return c.name?.toLowerCase().includes(searchQuery.toLowerCase());
   });
