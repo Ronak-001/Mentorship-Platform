@@ -21,7 +21,7 @@ const Landing = ({ user }) => {
             <a href="#about" className="nav-link">About</a>
             <a href="#features" className="nav-link">Features</a>
             <a href="#join" className="nav-link">Join</a>
-            <Link to="/login" className="btn btn-primary-landing-landing glass-btn">Login</Link>
+            <Link to="/login" className="btn btn-primary-landing glass-btn">Login</Link>
             <Link to="/register" className="btn btn-primary-landing glass-btn">Get Started</Link>
           </div>
         </div>
