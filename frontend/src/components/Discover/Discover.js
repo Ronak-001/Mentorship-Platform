@@ -83,7 +83,7 @@ const Discover = ({ user }) => {
       case 'CONNECTED':
         return (
           <>
-            <button className="btn btn-success" disabled style={{ opacity: 0.8 }}>
+            <button className="btn  btn-success" disabled style={{ opacity: 0.8 }}>
               <FiCheck /> Connected
             </button>
             <button onClick={() => startVideoCall(userId)} className="btn">
@@ -107,21 +107,21 @@ const Discover = ({ user }) => {
 
       case 'REQUEST_SENT':
         return (
-          <button className="btn" disabled style={{ opacity: 0.7 }}>
+          <button className="btn btn-primary-discover" disabled style={{ opacity: 0.7 }}>
             <FiClock /> Request Sent
           </button>
         );
 
       case 'loading':
         return (
-          <button className="btn btn-primary" disabled>
+          <button className="btn btn-primary-discover" disabled>
             ...
           </button>
         );
 
       default: // NOT_CONNECTED
         return (
-          <button onClick={() => handleConnect(userId)} className="btn btn-primary">
+          <button onClick={() => handleConnect(userId)} className="btn btn-primary-discover">
             <FiUserPlus /> Connect
           </button>
         );
@@ -225,7 +225,7 @@ const Discover = ({ user }) => {
               {searchQuery.trim() ? (
                 <>
                   <p>No users found for "{searchQuery}"</p>
-                  <button onClick={() => setSearchQuery('')} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                  <button onClick={() => setSearchQuery('')} className="btn btn-primary-discover" style={{ marginTop: '1rem' }}>
                     Clear Search
                   </button>
                 </>
@@ -235,7 +235,7 @@ const Discover = ({ user }) => {
                   <p style={{ marginTop: '0.5rem', opacity: 0.9 }}>
                     Discover shows other people on the platform — you won&apos;t see yourself here.
                   </p>
-                  <Link to={`/profile/${user.id || user._id}`} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                  <Link to={`/profile/${user.id || user._id}`} className="btn btn-primary-discover" style={{ marginTop: '1rem' }}>
                     Go to my profile
                   </Link>
                 </>
