@@ -8,10 +8,63 @@
 .discover-title {
   font-size: 1.75rem;
   font-weight: 700;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
+}
+
+/* ─── Search Bar ─── */
+.discover-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  transition: border-color 0.2s;
+}
+
+.discover-search-bar:focus-within {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.discover-search-icon {
+  color: #94a3b8;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.discover-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.discover-search-input::placeholder {
+  color: #64748b;
+}
+
+.discover-search-clear {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+}
+
+.discover-search-clear:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .filter-buttons {

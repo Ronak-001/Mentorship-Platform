@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { FiUserPlus, FiCheck, FiClock, FiVideo, FiMessageCircle } from 'react-icons/fi';
+import { FiUserPlus, FiCheck, FiClock, FiVideo, FiMessageCircle, FiSearch } from 'react-icons/fi';
 import Avatar from '../Avatar';
 import './Discover.css';
 
 const Discover = ({ user }) => {
   const [users, setUsers] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   // Per-user status: 'NOT_CONNECTED' | 'REQUEST_SENT' | 'CONNECTED' | 'loading'
   // NOTE: We intentionally do NOT show REQUEST_RECEIVED here — that belongs in the Requests page
@@ -140,6 +141,25 @@ const Discover = ({ user }) => {
       <div className="container">
         <h1 className="discover-title">Discover People</h1>
 
+        <div className="discover-search-bar">
+          <FiSearch className="discover-search-icon" />
+          <input
+            type="text"
+            placeholder="Search by name, role, or skills..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="discover-search-input"
+          />
+          {searchQuery && (
+            <button
+              className="discover-search-clear"
+              onClick={() => setSearchQuery('')}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
         <div className="filter-buttons">
           <button
             onClick={() => setFilter('all')}
@@ -162,37 +182,66 @@ const Discover = ({ user }) => {
         </div>
 
         <div className="users-grid">
-          {users.map(discoveredUser => {
-            const userId = discoveredUser._id || discoveredUser.id;
-            return (
-              <div key={userId} className="user-card glass">
-                <Link to={`/profile/${userId}`} className="user-link">
-                  <Avatar name={discoveredUser.name} src={discoveredUser.profilePicture} size="md" className="user-avatar" />
-                  <h3 className="user-name">{discoveredUser.name}</h3>
-                  <p className="user-role">{discoveredUser.role}</p>
-                  {discoveredUser.bio && (
-                    <p className="user-bio">{discoveredUser.bio.substring(0, 100)}...</p>
-                  )}
-                </Link>
-                <div className="user-actions">
-                  {renderActionButtons(userId)}
+          {users
+            .filter(u => {
+              if (!searchQuery.trim()) return true;
+              const q = searchQuery.toLowerCase();
+              const name = (u.name || '').toLowerCase();
+              const role = (u.role || '').toLowerCase();
+              const bio = (u.bio || '').toLowerCase();
+              const skills = (u.skills || []).map(s => s.toLowerCase());
+              return name.includes(q) || role.includes(q) || bio.includes(q) || skills.some(s => s.includes(q));
+            })
+            .map(discoveredUser => {
+              const userId = discoveredUser._id || discoveredUser.id;
+              return (
+                <div key={userId} className="user-card glass">
+                  <Link to={`/profile/${userId}`} className="user-link">
+                    <Avatar name={discoveredUser.name} src={discoveredUser.profilePicture} size="md" className="user-avatar" />
+                    <h3 className="user-name">{discoveredUser.name}</h3>
+                    <p className="user-role">{discoveredUser.role}</p>
+                    {discoveredUser.bio && (
+                      <p className="user-bio">{discoveredUser.bio.substring(0, 100)}...</p>
+                    )}
+                  </Link>
+                  <div className="user-actions">
+                    {renderActionButtons(userId)}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
 
-        {users.length === 0 && (
-          <div className="empty-state glass">
-            <p>No other users to discover yet.</p>
-            <p style={{ marginTop: '0.5rem', opacity: 0.9 }}>
-              Discover shows other people on the platform — you won&apos;t see yourself here.
-            </p>
-            <Link to={`/profile/${user.id || user._id}`} className="btn btn-primary" style={{ marginTop: '1rem' }}>
-              Go to my profile
-            </Link>
-          </div>
-        )}
+        {users.filter(u => {
+          if (!searchQuery.trim()) return true;
+          const q = searchQuery.toLowerCase();
+          const name = (u.name || '').toLowerCase();
+          const role = (u.role || '').toLowerCase();
+          const bio = (u.bio || '').toLowerCase();
+          const skills = (u.skills || []).map(s => s.toLowerCase());
+          return name.includes(q) || role.includes(q) || bio.includes(q) || skills.some(s => s.includes(q));
+        }).length === 0 && !loading && (
+            <div className="empty-state glass">
+              {searchQuery.trim() ? (
+                <>
+                  <p>No users found for "{searchQuery}"</p>
+                  <button onClick={() => setSearchQuery('')} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                    Clear Search
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p>No other users to discover yet.</p>
+                  <p style={{ marginTop: '0.5rem', opacity: 0.9 }}>
+                    Discover shows other people on the platform — you won&apos;t see yourself here.
+                  </p>
+                  <Link to={`/profile/${user.id || user._id}`} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                    Go to my profile
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );
