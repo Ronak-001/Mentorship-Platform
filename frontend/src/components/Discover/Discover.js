@@ -1,7 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { FiUserPlus, FiCheck, FiClock, FiVideo, FiMessageCircle, FiSearch } from 'react-icons/fi';
+import {
+  FiUserPlus,
+  FiCheck,
+  FiClock,
+  FiVideo,
+  FiMessageCircle,
+  FiSearch
+} from 'react-icons/fi';
 import Avatar from '../Avatar';
 import './Discover.css';
 
@@ -10,9 +17,14 @@ const Discover = ({ user }) => {
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  // Per-user status: 'NOT_CONNECTED' | 'REQUEST_SENT' | 'CONNECTED' | 'loading'
-  // NOTE: We intentionally do NOT show REQUEST_RECEIVED here — that belongs in the Requests page
   const [connectionStatus, setConnectionStatus] = useState({});
+
+  const gridRef = useRef(null);
+  const animationFrame = useRef(null);
+
+  /* =============================
+     FETCH USERS
+  ============================== */
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -27,7 +39,6 @@ const Discover = ({ user }) => {
 
       setUsers(filteredUsers);
 
-      // Fetch connection status for every user in parallel
       const statusEntries = await Promise.all(
         filteredUsers.map(async (u) => {
           const uid = u._id || u.id;
@@ -39,8 +50,8 @@ const Discover = ({ user }) => {
           }
         })
       );
-      const statusMap = Object.fromEntries(statusEntries);
-      setConnectionStatus(statusMap);
+
+      setConnectionStatus(Object.fromEntries(statusEntries));
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -52,6 +63,59 @@ const Discover = ({ user }) => {
     fetchUsers();
   }, [fetchUsers]);
 
+  /* =============================
+     WAVE ANIMATION
+  ============================== */
+
+  const handleMouseMove = (e) => {
+    if (!gridRef.current) return;
+
+    if (animationFrame.current) {
+      cancelAnimationFrame(animationFrame.current);
+    }
+
+    animationFrame.current = requestAnimationFrame(() => {
+      const cards = gridRef.current.querySelectorAll('.user-card');
+
+      cards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const dx = e.clientX - centerX;
+        const dy = e.clientY - centerY;
+
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        const radius = 280;      // wave spread
+        const maxLift = 15;      // vertical movement
+        const maxScale = 0.05;   // slight scale
+
+        const intensity = Math.max(0, 1 - distance / radius);
+
+        const lift = intensity * maxLift;
+        const scale = 1 + intensity * maxScale;
+
+        card.style.transform = `translateY(${-lift}px) scale(${scale})`;
+      });
+    });
+  };
+
+  const handleMouseLeave = () => {
+    if (!gridRef.current) return;
+
+    const cards = gridRef.current.querySelectorAll('.user-card');
+
+    cards.forEach((card) => {
+      card.style.transform = 'translateY(0px) scale(1)';
+    });
+  };
+
+  /* =============================
+     CONNECTION LOGIC
+  ============================== */
+
   const handleConnect = async (userId) => {
     setConnectionStatus(prev => ({ ...prev, [userId]: 'loading' }));
     try {
@@ -59,23 +123,19 @@ const Discover = ({ user }) => {
       setConnectionStatus(prev => ({ ...prev, [userId]: res.data.status }));
     } catch (error) {
       const status = error.response?.data?.status;
-      if (status) {
-        setConnectionStatus(prev => ({ ...prev, [userId]: status }));
-      } else {
-        setConnectionStatus(prev => ({ ...prev, [userId]: 'NOT_CONNECTED' }));
-        console.error('Error connecting:', error);
-      }
+      setConnectionStatus(prev => ({
+        ...prev,
+        [userId]: status || 'NOT_CONNECTED'
+      }));
     }
   };
 
-  const startVideoCall = (userId) => {
+  const startVideoCall = () => {
     const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     window.open(`/video/${roomId}`, '_blank');
   };
 
   const renderActionButtons = (userId) => {
-    // Map REQUEST_RECEIVED to NOT_CONNECTED for Discover page display
-    // Accept/Decline belongs in the Requests page, not here
     let status = connectionStatus[userId] || 'NOT_CONNECTED';
     if (status === 'REQUEST_RECEIVED') status = 'NOT_CONNECTED';
 
@@ -83,7 +143,7 @@ const Discover = ({ user }) => {
       case 'CONNECTED':
         return (
           <>
-            <button className="btn  btn-success" disabled style={{ opacity: 0.8 }}>
+            <button className="btn btn-success" disabled>
               <FiCheck /> Connected
             </button>
             <button onClick={() => startVideoCall(userId)} className="btn">
@@ -91,12 +151,8 @@ const Discover = ({ user }) => {
             </button>
             <button
               onClick={async () => {
-                try {
-                  const res = await axios.post('/chat', { userId });
-                  window.location.href = `/chat/${res.data._id}`;
-                } catch (error) {
-                  console.error('Error creating chat:', error);
-                }
+                const res = await axios.post('/chat', { userId });
+                window.location.href = `/chat/${res.data._id}`;
               }}
               className="btn"
             >
@@ -107,7 +163,7 @@ const Discover = ({ user }) => {
 
       case 'REQUEST_SENT':
         return (
-          <button className="btn btn-primary-discover" disabled style={{ opacity: 0.7 }}>
+          <button className="btn btn-primary-discover" disabled>
             <FiClock /> Request Sent
           </button>
         );
@@ -119,9 +175,12 @@ const Discover = ({ user }) => {
           </button>
         );
 
-      default: // NOT_CONNECTED
+      default:
         return (
-          <button onClick={() => handleConnect(userId)} className="btn btn-primary-discover">
+          <button
+            onClick={() => handleConnect(userId)}
+            className="btn btn-primary-discover"
+          >
             <FiUserPlus /> Connect
           </button>
         );
@@ -129,119 +188,54 @@ const Discover = ({ user }) => {
   };
 
   if (loading) {
-    return (
-      <div className="container">
-        <div className="loading">Loading users...</div>
-      </div>
-    );
+    return <div className="loading">Loading users...</div>;
   }
+
+  const filteredUsers = users.filter(u => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (u.name || '').toLowerCase().includes(q) ||
+      (u.role || '').toLowerCase().includes(q) ||
+      (u.bio || '').toLowerCase().includes(q) ||
+      (u.skills || []).some(s => s.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <div className="discover-container">
       <div className="container">
         <h1 className="discover-title">Discover People</h1>
 
-        <div className="discover-search-bar">
-          <FiSearch className="discover-search-icon" />
-          <input
-            type="text"
-            placeholder="Search by name, role, or skills..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="discover-search-input"
-          />
-          {searchQuery && (
-            <button
-              className="discover-search-clear"
-              onClick={() => setSearchQuery('')}
-            >
-              ✕
-            </button>
-          )}
-        </div>
+        <div
+          className="users-grid"
+          ref={gridRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          {filteredUsers.map(discoveredUser => {
+            const userId = discoveredUser._id || discoveredUser.id;
 
-        <div className="filter-buttons">
-          <button
-            onClick={() => setFilter('all')}
-            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setFilter('mentors')}
-            className={`filter-btn ${filter === 'mentors' ? 'active' : ''}`}
-          >
-            Mentors
-          </button>
-          <button
-            onClick={() => setFilter('students')}
-            className={`filter-btn ${filter === 'students' ? 'active' : ''}`}
-          >
-            Students
-          </button>
-        </div>
+            return (
+              <div key={userId} className="user-card glass">
+                <Link to={`/profile/${userId}`} className="user-link">
+                  <Avatar
+                    name={discoveredUser.name}
+                    src={discoveredUser.profilePicture}
+                    size="md"
+                    className="user-avatar"
+                  />
+                  <h3 className="user-name">{discoveredUser.name}</h3>
+                  <p className="user-role">{discoveredUser.role}</p>
+                </Link>
 
-        <div className="users-grid">
-          {users
-            .filter(u => {
-              if (!searchQuery.trim()) return true;
-              const q = searchQuery.toLowerCase();
-              const name = (u.name || '').toLowerCase();
-              const role = (u.role || '').toLowerCase();
-              const bio = (u.bio || '').toLowerCase();
-              const skills = (u.skills || []).map(s => s.toLowerCase());
-              return name.includes(q) || role.includes(q) || bio.includes(q) || skills.some(s => s.includes(q));
-            })
-            .map(discoveredUser => {
-              const userId = discoveredUser._id || discoveredUser.id;
-              return (
-                <div key={userId} className="user-card glass">
-                  <Link to={`/profile/${userId}`} className="user-link">
-                    <Avatar name={discoveredUser.name} src={discoveredUser.profilePicture} size="md" className="user-avatar" />
-                    <h3 className="user-name">{discoveredUser.name}</h3>
-                    <p className="user-role">{discoveredUser.role}</p>
-                    {discoveredUser.bio && (
-                      <p className="user-bio">{discoveredUser.bio.substring(0, 100)}...</p>
-                    )}
-                  </Link>
-                  <div className="user-actions">
-                    {renderActionButtons(userId)}
-                  </div>
+                <div className="user-actions">
+                  {renderActionButtons(userId)}
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
         </div>
-
-        {users.filter(u => {
-          if (!searchQuery.trim()) return true;
-          const q = searchQuery.toLowerCase();
-          const name = (u.name || '').toLowerCase();
-          const role = (u.role || '').toLowerCase();
-          const bio = (u.bio || '').toLowerCase();
-          const skills = (u.skills || []).map(s => s.toLowerCase());
-          return name.includes(q) || role.includes(q) || bio.includes(q) || skills.some(s => s.includes(q));
-        }).length === 0 && !loading && (
-            <div className="empty-state glass">
-              {searchQuery.trim() ? (
-                <>
-                  <p>No users found for "{searchQuery}"</p>
-                  <button onClick={() => setSearchQuery('')} className="btn btn-primary-discover" style={{ marginTop: '1rem' }}>
-                    Clear Search
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p>No other users to discover yet.</p>
-                  <p style={{ marginTop: '0.5rem', opacity: 0.9 }}>
-                    Discover shows other people on the platform — you won&apos;t see yourself here.
-                  </p>
-                  <Link to={`/profile/${user.id || user._id}`} className="btn btn-primary-discover" style={{ marginTop: '1rem' }}>
-                    Go to my profile
-                  </Link>
-                </>
-              )}
-            </div>
-          )}
       </div>
     </div>
   );

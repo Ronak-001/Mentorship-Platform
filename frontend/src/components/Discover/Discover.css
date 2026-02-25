@@ -1,3 +1,7 @@
+/* ============================= */
+/* DISCOVER CONTAINER */
+/* ============================= */
+
 .discover-container {
   padding: 0;
   background: transparent;
@@ -14,7 +18,10 @@
   color: #fff;
 }
 
-/* ─── Search Bar ─── */
+/* ============================= */
+/* SEARCH BAR */
+/* ============================= */
+
 .discover-search-bar {
   display: flex;
   align-items: center;
@@ -25,11 +32,11 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
-  transition: border-color 0.2s;
+  transition: border-color 0.25s ease;
 }
 
 .discover-search-bar:focus-within {
-  border-color: rgba(99, 102, 241, 0.5);
+  border-color: rgba(99, 102, 241, 0.6);
 }
 
 .discover-search-icon {
@@ -59,13 +66,17 @@
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 50%;
-  transition: color 0.15s, background 0.15s;
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
 .discover-search-clear:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.1);
 }
+
+/* ============================= */
+/* FILTER BUTTONS */
+/* ============================= */
 
 .filter-buttons {
   display: flex;
@@ -82,13 +93,14 @@
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .filter-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
   color: #fff;
+  transform: translateY(-2px);
 }
 
 .filter-btn.active {
@@ -97,44 +109,64 @@
   color: #fff;
 }
 
+/* ============================= */
+/* USERS GRID */
+/* ============================= */
+
 .users-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1.27rem;
+
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* Subtle grid compression for shared motion */
+.users-grid:hover {
+  transform: scale(0.985);
+}
+
+/* ============================= */
+/* USER CARD */
+/* ============================= */
 
 .user-card {
   padding: 1.5rem;
   text-align: center;
   background: rgba(27, 27, 27, 0.05);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(120, 57, 196, 0.719);
+  border: 1px solid rgba(120, 57, 196, 0.6);
   border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.25s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+
+  opacity: 0.85;
+
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.4s ease,
+    opacity 0.3s ease;
 
   will-change: transform;
 }
 
-.user-card:hover {
-  transform: translateY(-8px);
-  background: rgba(121, 76, 235, 0.25);
-  box-shadow: 0 0px 10px rgba(28, 48, 199, 0.4), 0 0px 14px rgba(255, 255, 255, 0.4);
-}
-
+/* All cards slightly shrink when grid active */
 .users-grid:hover .user-card {
-  opacity: 0.50;
+  transform: scale(0.97);
 }
 
-.users-grid .user-card:hover {
+/* Hovered card lifts and expands */
+.user-card:hover {
   opacity: 1;
-  transform: translateY(-5px) scale(1.00);
+  transform: translateY(-8px) scale(1.06);
+  background: rgba(121, 76, 235, 0.25);
+  box-shadow: 0 14px 35px rgba(28, 48, 199, 0.35);
   z-index: 2;
 }
 
-
+/* ============================= */
+/* CARD CONTENT */
+/* ============================= */
 
 .user-link {
   text-decoration: none;
@@ -153,7 +185,6 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  /* display: block; */
   border: 2px solid #e5e7eb;
 }
 
@@ -177,6 +208,10 @@
   line-height: 1.5;
 }
 
+/* ============================= */
+/* ACTION BUTTONS */
+/* ============================= */
+
 .user-actions {
   display: flex;
   gap: 0.5rem;
@@ -187,7 +222,20 @@
 .user-actions .btn {
   padding: 0.45rem 0.9rem;
   font-size: 0.875rem;
+  background: #030b1c;
+  border: 1px solid #6223f4;
+  color: #fff;
+  transition: all 0.3s ease;
 }
+
+.user-actions .btn:hover {
+  background-color: #6223f4;
+  transform: translateY(-2px);
+}
+
+/* ============================= */
+/* EMPTY / LOADING */
+/* ============================= */
 
 .empty-state {
   text-align: center;
@@ -206,14 +254,4 @@
   text-align: center;
   color: #6b7280;
   padding: 1.5rem;
-}
-
-.user-card button {
-  background: #030b1c;
-  border: 1px solid #6223f4;
-  color: #fff;
-}
-
-.user-card button:hover {
-  background-color: #6223f4
 }
