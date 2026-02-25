@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const groupMessageSchema = new mongoose.Schema({
+const channelMessageSchema = new mongoose.Schema({
   sender: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -12,6 +12,12 @@ const groupMessageSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+const channelSchema = new mongoose.Schema({
+  name: { type: String, required: true },                          // "Community Chat" / "Announcements"
+  type: { type: String, enum: ['community', 'announcements'], required: true },
+  messages: [channelMessageSchema]
 });
 
 const groupSchema = new mongoose.Schema({
@@ -36,11 +42,20 @@ const groupSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  messages: [groupMessageSchema],
+  channels: [channelSchema],
+  // Legacy flat messages (kept for non-program groups)
+  messages: [{
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    text: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now }
+  }],
   groupPicture: {
     type: String,
     default: ''
-  }
+  },
+  // Program group fields
+  isProgramGroup: { type: Boolean, default: false },
+  program: { type: mongoose.Schema.Types.ObjectId, ref: 'Program', default: null }
 }, {
   timestamps: true
 });

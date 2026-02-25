@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiVideo, FiMessageCircle, FiUserPlus, FiUserMinus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText, FiActivity, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiMessageCircle, FiUserPlus, FiUserMinus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText, FiActivity, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { resolveMediaUrl } from '../../utils/url';
 import Avatar from '../Avatar';
 import PostCard from '../Feed/PostCard';
@@ -212,10 +212,7 @@ const Profile = ({ user: currentUser }) => {
     }
   };
 
-  const startVideoCall = () => {
-    const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    window.open(`/video/${roomId}`, '_blank');
-  };
+
 
   if (loading) {
     return (
@@ -513,9 +510,7 @@ const Profile = ({ user: currentUser }) => {
                     >
                       <FiCheck /> Connected
                     </button>
-                    <button onClick={startVideoCall} className="btn btn-primary">
-                      <FiVideo /> Video Call
-                    </button>
+
                     <button
                       onClick={async () => {
                         try {
@@ -529,6 +524,14 @@ const Profile = ({ user: currentUser }) => {
                     >
                       <FiMessageCircle /> Message
                     </button>
+                    {profileUser?.role === 'mentor' && (
+                      <button
+                        onClick={() => navigate(`/programs`)}
+                        className="btn book-session-btn"
+                      >
+                        <FiClock /> View Programs
+                      </button>
+                    )}
                   </>
                 )}
 
@@ -568,11 +571,8 @@ const Profile = ({ user: currentUser }) => {
                 {connectionStatus === 'loading' && (
                   <button className="btn btn-primary" disabled>...</button>
                 )}
-                {profileUser.role === 'mentor' && currentUser.role === 'student' && (
-                  <button onClick={handleRequestMentor} className="btn">
-                    Request Mentor
-                  </button>
-                )}
+
+
               </div>
             )}
           </div>

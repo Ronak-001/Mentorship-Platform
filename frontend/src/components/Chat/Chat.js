@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
-import { FiSend, FiVideo } from 'react-icons/fi';
+import { FiSend } from 'react-icons/fi';
 import Avatar from '../Avatar';
 import './Chat.css';
 
@@ -11,6 +11,7 @@ import './Chat.css';
 
 const Chat = ({ user }) => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [chat, setChat] = useState(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -101,10 +102,7 @@ const Chat = ({ user }) => {
     }
   };
 
-  const startVideoCall = () => {
-    const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    window.open(`/video/${roomId}`, '_blank');
-  };
+
 
   const getOtherUser = () => {
     return chat?.participants.find(p => (p._id || p.id) !== (user.id || user._id));
@@ -132,16 +130,14 @@ const Chat = ({ user }) => {
     <div className="chat-container">
       <div className="chat-header">
         <Link to="/chat" className="back-link">← Back</Link>
-        <div className="chat-header-user">
+        <div className="chat-header-user" onClick={() => navigate(`/profile/${otherUser?._id || otherUser?.id}`)} style={{ cursor: 'pointer' }}>
           <Avatar name={otherUser?.name} src={otherUser?.profilePicture} size="sm" className="chat-header-avatar" />
           <div>
             <div className="chat-header-name">{otherUser?.name}</div>
             <div className="chat-header-role">{otherUser?.role}</div>
           </div>
         </div>
-        <button onClick={startVideoCall} className="video-call-btn">
-          <FiVideo /> Video Call
-        </button>
+
       </div>
 
       <div className="messages-container">

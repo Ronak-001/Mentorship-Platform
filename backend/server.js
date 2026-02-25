@@ -55,7 +55,7 @@ app.use(express.urlencoded({ extended: true }));
 // Basic rate limit for API
 app.use('/api', rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 300,
+  limit: 1000,
   standardHeaders: true,
   legacyHeaders: false,
 }));
@@ -98,6 +98,9 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/groups', require('./routes/groups'));
+app.use('/api/programs', require('./routes/programs'));
+app.use('/api/availability', require('./routes/availability'));
+app.use('/api/sessions', require('./routes/sessions'));
 
 // Serve frontend build (SPA) in production only (after `frontend` is built)
 const frontendPath = path.join(__dirname, '../frontend/build');
