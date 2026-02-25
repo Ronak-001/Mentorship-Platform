@@ -299,6 +299,20 @@ router.post('/:id/disconnect', auth, async (req, res) => {
   }
 });
 
+// Get populated connections list for a user
+router.get('/:id/connections', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('connections', 'name role bio skills profilePicture');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user.connections);
+  } catch (error) {
+    console.error('Error fetching connections:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get connection status with a specific user
 router.get('/:id/connection-status', auth, async (req, res) => {
   try {

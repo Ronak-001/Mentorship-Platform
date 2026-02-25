@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FiVideo, FiMessageCircle, FiUserPlus, FiUserMinus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText, FiActivity, FiChevronDown, FiChevronUp } from 'react-icons/fi';
@@ -35,6 +35,10 @@ const Profile = ({ user: currentUser }) => {
   const [certificateFiles, setCertificateFiles] = useState([]);
   const [viewingCert, setViewingCert] = useState(null);
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [showConnectionsModal, setShowConnectionsModal] = useState(false);
+  const [connections, setConnections] = useState([]);
+  const [loadingConnections, setLoadingConnections] = useState(false);
+  const connectionsRef = useRef(null);
 
   // Activity section state
   const [showActivity, setShowActivity] = useState(false);
@@ -142,6 +146,22 @@ const Profile = ({ user: currentUser }) => {
     setActivityPosts([]);
     setActivityLoaded(false);
   }, [fetchProfile]);
+
+  const fetchConnections = useCallback(async () => {
+    try {
+      setLoadingConnections(true);
+      const res = await axios.get(`/users/${id}/connections`);
+      setConnections(res.data);
+      setShowConnectionsModal(true);
+      setTimeout(() => {
+        connectionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    } catch (error) {
+      console.error('Error fetching connections:', error);
+    } finally {
+      setLoadingConnections(false);
+    }
+  }, [id]);
 
   const handleConnect = async () => {
     setConnectionStatus('loading');
@@ -373,9 +393,9 @@ const Profile = ({ user: currentUser }) => {
           <div className="profile-info">
             <h1 className="profile-name">{profileUser.name}</h1>
             <p className="profile-role">{profileUser.role}</p>
-            <p className="profile-connections">
+            <span className="profile-connections-link" onClick={fetchConnections}>
               {profileUser.connections?.length || 0} Connections
-            </p>
+            </span>
             <p className="profile-bio">{profileUser.bio || 'No bio yet'}</p>
 
             {isOwnProfile && !editing && (
@@ -544,6 +564,7 @@ const Profile = ({ user: currentUser }) => {
                     </div>
                   </div>
                 )}
+
                 {connectionStatus === 'loading' && (
                   <button className="btn btn-primary" disabled>...</button>
                 )}
@@ -556,6 +577,35 @@ const Profile = ({ user: currentUser }) => {
             )}
           </div>
         </div>
+
+        {/* Connections popup modal */}
+        {showConnectionsModal && (
+          <div className="connections-overlay" onClick={() => setShowConnectionsModal(false)}>
+            <div className="connections-popup glass" onClick={e => e.stopPropagation()}>
+              <div className="connections-popup-header">
+                <h3>Connections ({connections.length})</h3>
+                <button className="close-btn" onClick={() => setShowConnectionsModal(false)}><FiX /></button>
+              </div>
+              <div className="connections-popup-list">
+                {loadingConnections ? (
+                  <p style={{ color: '#94a3b8', padding: '1rem', textAlign: 'center' }}>Loading...</p>
+                ) : connections.length > 0 ? (
+                  connections.map(conn => (
+                    <div key={conn._id} className="connection-item" onClick={() => { setShowConnectionsModal(false); navigate(`/profile/${conn._id}`); }}>
+                      <Avatar name={conn.name} src={conn.profilePicture} size="sm" />
+                      <div className="connection-info">
+                        <span className="conn-name">{conn.name}</span>
+                        <span className="conn-role">{conn.role}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ color: '#64748b', padding: '2rem 1rem', textAlign: 'center' }}>No connections yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="profile-content">
           <div className="profile-section glass">
