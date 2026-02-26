@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
-import { FiSend, FiVideo, FiUserPlus, FiX, FiSearch, FiUsers, FiShield, FiSettings, FiShieldOff } from 'react-icons/fi';
+import { FiSend, FiVideo, FiUserPlus, FiX, FiSearch, FiUsers, FiShield, FiSettings, FiShieldOff, FiHash, FiVolume2 } from 'react-icons/fi';
 import { resolveMediaUrl } from '../../utils/url';
 import Avatar from '../Avatar';
 import './Groups.css';
@@ -18,6 +18,14 @@ const GroupDetail = ({ user }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCreator, setIsCreator] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Channel state (for program groups)
+  const [activeChannel, setActiveChannel] = useState(null);
+  const activeChannelRef = useRef(null);
+  const [channelMessages, setChannelMessages] = useState([]);
+  const [channelsLoading, setChannelsLoading] = useState(false);
+  const groupRef = useRef(null);
+  const initialChannelSet = useRef(false);
 
   // Add Members modal state
   const [showAddMembers, setShowAddMembers] = useState(false);
@@ -36,6 +44,15 @@ const GroupDetail = ({ user }) => {
   const [settingsPreview, setSettingsPreview] = useState(null);
   const [settingsSaving, setSettingsSaving] = useState(false);
 
+  // Keep refs in sync
+  useEffect(() => {
+    activeChannelRef.current = activeChannel;
+  }, [activeChannel]);
+  useEffect(() => {
+    groupRef.current = group;
+  }, [group]);
+
+  // ─── Fetch group (only on mount / id change) ───
   const fetchGroup = useCallback(async () => {
     try {
       const res = await axios.get(`/groups/${id}`);
@@ -48,28 +65,67 @@ const GroupDetail = ({ user }) => {
       const cId = res.data.admin?._id || res.data.admin?.id || res.data.admin;
       setIsAdmin(adminIds.includes(userId) || cId === userId);
       setIsCreator(cId === userId);
+
+      // Default to first channel ONLY on first load
+      if (res.data.isProgramGroup && res.data.channels?.length > 0 && !initialChannelSet.current) {
+        initialChannelSet.current = true;
+        setActiveChannel(res.data.channels[0]);
+      }
     } catch (error) {
       console.error('Error fetching group:', error);
     } finally {
       setLoading(false);
     }
-  }, [id, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user._id || user.id]);
 
-  const handleReceiveMessage = useCallback((data) => {
-    if (data.groupId === id) {
-      fetchGroup();
-    }
-  }, [id, fetchGroup]);
-
+  // Initial fetch — runs once per group id
   useEffect(() => {
+    initialChannelSet.current = false;
     fetchGroup();
-    socket.on('group-message', handleReceiveMessage);
-    return () => { socket.off('group-message'); };
-  }, [id, fetchGroup, handleReceiveMessage]);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Fetch channel messages ───
+  const fetchChannelMessages = useCallback(async (channelId) => {
+    if (!channelId) return;
+    setChannelsLoading(true);
+    try {
+      const res = await axios.get(`/groups/${id}/channels/${channelId}/messages`);
+      setChannelMessages(res.data);
+    } catch (err) {
+      console.error('Error fetching channel messages:', err);
+    } finally {
+      setChannelsLoading(false);
+    }
+  }, [id]);
+
+  // Fetch messages when active channel changes
+  useEffect(() => {
+    if (activeChannel?._id) {
+      fetchChannelMessages(activeChannel._id);
+    }
+  }, [activeChannel?._id, fetchChannelMessages]);
+
+  // ─── Socket: handle incoming messages ───
+  useEffect(() => {
+    const handler = (data) => {
+      if (data.groupId !== id) return;
+      const g = groupRef.current;
+      const ch = activeChannelRef.current;
+      if (g?.isProgramGroup && ch) {
+        fetchChannelMessages(ch._id);
+      } else {
+        // Regular group — re-fetch group to get new messages
+        fetchGroup();
+      }
+    };
+    socket.on('group-message', handler);
+    return () => { socket.off('group-message', handler); };
+  }, [id, fetchGroup, fetchChannelMessages]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [group?.messages]);
+  }, [group?.messages, channelMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -84,22 +140,32 @@ const GroupDetail = ({ user }) => {
     }
   };
 
+  // ─── Send message ───
   const handleSend = async (e) => {
     e.preventDefault();
     if (!message.trim() || !isMember) return;
     try {
-      const res = await axios.post(`/groups/${id}/messages`, { text: message });
-      setGroup(res.data);
-      setMessage('');
-      socket.emit('group-message', { groupId: id, text: message, sender: user });
+      if (group.isProgramGroup && activeChannel) {
+        await axios.post(`/groups/${id}/channels/${activeChannel._id}/messages`, { text: message });
+        setMessage('');
+        fetchChannelMessages(activeChannel._id);
+        socket.emit('group-message', { groupId: id, channelId: activeChannel._id, text: message, sender: user });
+      } else {
+        const res = await axios.post(`/groups/${id}/messages`, { text: message });
+        setGroup(res.data);
+        setMessage('');
+        socket.emit('group-message', { groupId: id, text: message, sender: user });
+      }
     } catch (error) {
+      if (error.response?.status === 403) {
+        alert(error.response.data.message || 'You cannot post in this channel');
+      }
       console.error('Error sending message:', error);
     }
   };
 
   const startVideoCall = () => {
-    const roomId = `group-${id}-${Date.now()}`;
-    window.open(`/video/${roomId}`, '_blank');
+    window.open(`/video-call/${id}`, '_blank');
   };
 
   // ─── Add Members Logic ───
@@ -110,8 +176,8 @@ const GroupDetail = ({ user }) => {
     try {
       const res = await axios.get('/users');
       setAllUsers(res.data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
+    } catch {
+      setAllUsers([]);
     } finally {
       setUsersLoading(false);
     }
@@ -120,7 +186,6 @@ const GroupDetail = ({ user }) => {
   const closeAddMembers = () => {
     setShowAddMembers(false);
     setSearchQuery('');
-    setAddingUserId(null);
   };
 
   const handleAddMember = async (userId) => {
@@ -128,24 +193,21 @@ const GroupDetail = ({ user }) => {
     try {
       const res = await axios.post(`/groups/${id}/add-member`, { userId });
       setGroup(res.data);
-      await fetchGroup();
-    } catch (error) {
-      const msg = error.response?.data?.message || 'Failed to add member';
-      alert(msg);
+      setAllUsers(allUsers.filter(u => (u._id || u.id) !== userId));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error adding member');
     } finally {
       setAddingUserId(null);
     }
   };
 
-  // ─── Make / Remove Admin Logic ───
+  // ─── Make / Remove Admin ───
   const handleMakeAdmin = async (userId) => {
     try {
       const res = await axios.post(`/groups/${id}/make-admin`, { userId });
       setGroup(res.data);
-      await fetchGroup();
-    } catch (error) {
-      const msg = error.response?.data?.message || 'Failed to promote member';
-      alert(msg);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error');
     }
   };
 
@@ -153,14 +215,12 @@ const GroupDetail = ({ user }) => {
     try {
       const res = await axios.post(`/groups/${id}/remove-admin`, { userId });
       setGroup(res.data);
-      await fetchGroup();
-    } catch (error) {
-      const msg = error.response?.data?.message || 'Failed to remove admin';
-      alert(msg);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error');
     }
   };
 
-  // ─── Group Settings Logic ───
+  // ─── Group Settings ───
   const openSettings = () => {
     setSettingsForm({
       name: group.name || '',
@@ -179,13 +239,13 @@ const GroupDetail = ({ user }) => {
 
   const handleSettingsFileChange = (e) => {
     const file = e.target.files[0];
-    setSettingsFile(file);
     if (file) {
+      setSettingsFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => setSettingsPreview(reader.result);
+      reader.onloadend = () => {
+        setSettingsPreview(reader.result);
+      };
       reader.readAsDataURL(file);
-    } else {
-      setSettingsPreview(null);
     }
   };
 
@@ -193,27 +253,31 @@ const GroupDetail = ({ user }) => {
     e.preventDefault();
     setSettingsSaving(true);
     try {
-      const data = new FormData();
-      data.append('name', settingsForm.name);
-      data.append('description', settingsForm.description);
+      const formData = new FormData();
+      formData.append('name', settingsForm.name);
+      formData.append('description', settingsForm.description);
       if (settingsFile) {
-        data.append('groupPicture', settingsFile);
+        formData.append('groupPicture', settingsFile);
       }
-      const res = await axios.put(`/groups/${id}`, data, {
+      const res = await axios.put(`/groups/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setGroup(res.data);
-      await fetchGroup();
       closeSettings();
-    } catch (error) {
-      const msg = error.response?.data?.message || 'Failed to save settings';
-      alert(msg);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error saving settings');
     } finally {
       setSettingsSaving(false);
     }
   };
 
-  // Filter users: exclude current members and match search query
+  // ─── Switch channel handler ───
+  const switchChannel = (ch) => {
+    setActiveChannel(ch);
+    // fetchChannelMessages will be triggered by the useEffect watching activeChannel._id
+  };
+
+  // ─── Computed values ───
   const memberIds = group?.members?.map(m => m._id || m.id) || [];
   const adminIds = (group?.admins || []).map(a => a._id || a.id);
   const creatorId = group?.admin?._id || group?.admin?.id || group?.admin;
@@ -224,6 +288,16 @@ const GroupDetail = ({ user }) => {
     return u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchQuery.toLowerCase());
   });
+
+  const isProgramGroup = group?.isProgramGroup;
+  const displayMessages = isProgramGroup ? channelMessages : (group?.messages || []);
+
+  const canSendInChannel = () => {
+    if (!isProgramGroup) return true;
+    if (!activeChannel) return false;
+    if (activeChannel.type === 'announcements') return isAdmin;
+    return true;
+  };
 
   if (loading) {
     return (
@@ -241,9 +315,13 @@ const GroupDetail = ({ user }) => {
     );
   }
 
+  // ═════════════════════════════════════════════
+  //   RENDER — program group has sidebar layout
+  // ═════════════════════════════════════════════
   return (
     <div className="group-detail-container">
       <div className="container">
+        {/* ── Header ── */}
         <div className="group-detail-header glass">
           <Link to="/groups" className="back-link">← Back to Groups</Link>
           <div className="group-header-content">
@@ -266,7 +344,7 @@ const GroupDetail = ({ user }) => {
                   <FiUsers style={{ marginRight: '4px', verticalAlign: 'middle' }} />
                   {group.members?.length || 0} members
                 </span>
-                {isMember && (
+                {isMember && !isProgramGroup && (
                   <button onClick={startVideoCall} className="btn btn-primary">
                     <FiVideo /> Group Video Call
                   </button>
@@ -291,7 +369,7 @@ const GroupDetail = ({ user }) => {
           )}
         </div>
 
-        {/* Members Panel */}
+        {/* ── Members Panel ── */}
         {showMembers && (
           <div className="members-panel glass">
             <div className="members-panel-header">
@@ -319,7 +397,6 @@ const GroupDetail = ({ user }) => {
                       {isMemberAdmin && !isMemberCreator && (
                         <span className="admin-badge">Admin</span>
                       )}
-                      {/* Creator can remove admin from others */}
                       {isCreator && isMemberAdmin && !isMemberCreator && (
                         <button
                           onClick={() => handleRemoveAdmin(mid)}
@@ -329,7 +406,6 @@ const GroupDetail = ({ user }) => {
                           <FiShieldOff />
                         </button>
                       )}
-                      {/* Admins can promote non-admins (not yourself) */}
                       {isAdmin && !isMemberAdmin && mid !== myId && (
                         <button
                           onClick={() => handleMakeAdmin(mid)}
@@ -347,30 +423,119 @@ const GroupDetail = ({ user }) => {
           </div>
         )}
 
-        {isMember ? (
+        {/* ════════════════════════════════════
+            PROGRAM GROUP — sidebar channel layout
+            ════════════════════════════════════ */}
+        {isMember && isProgramGroup && group.channels?.length > 0 ? (
+          <div className="pgc-layout">
+            {/* Channel sidebar (left) */}
+            <div className="pgc-sidebar glass">
+              <div className="pgc-sidebar-title">Channels</div>
+              {group.channels.map(ch => (
+                <button
+                  key={ch._id}
+                  className={`pgc-channel-btn ${activeChannel?._id === ch._id ? 'active' : ''}`}
+                  onClick={() => switchChannel(ch)}
+                >
+                  {ch.type === 'announcements' ? <FiVolume2 /> : <FiHash />}
+                  <span>{ch.name}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Chat area (right) */}
+            <div className="pgc-chat-area">
+              <div className="pgc-chat-header glass">
+                {activeChannel?.type === 'announcements' ? <FiVolume2 /> : <FiHash />}
+                <span className="pgc-chat-header-name">{activeChannel?.name || 'Select a channel'}</span>
+                {activeChannel?.type === 'announcements' && !isAdmin && (
+                  <span className="pgc-readonly-badge">Read only</span>
+                )}
+              </div>
+
+              <div className="pgc-messages glass">
+                <div className="messages-list">
+                  {channelsLoading ? (
+                    <div className="pgc-empty-msg">Loading messages...</div>
+                  ) : displayMessages.length === 0 ? (
+                    <div className="pgc-empty-msg">
+                      {activeChannel?.type === 'announcements'
+                        ? '📢 No announcements yet'
+                        : '💬 No messages yet. Start the conversation!'}
+                    </div>
+                  ) : (
+                    displayMessages.map((msg, index) => {
+                      const sender = msg.sender || {};
+                      return (
+                        <div key={msg._id || index} className="group-message">
+                          <Avatar
+                            name={sender.name}
+                            src={sender.profilePicture}
+                            size="sm"
+                            className="message-avatar"
+                          />
+                          <div className="message-content">
+                            <div className="message-sender">{sender.name}</div>
+                            <div className="message-text">{msg.text}</div>
+                            <div className="message-time">
+                              {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ''}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </div>
+
+              {canSendInChannel() && (
+                <form onSubmit={handleSend} className="group-input-container glass">
+                  <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder={`Message #${activeChannel?.name || 'channel'}...`}
+                    className="chat-input"
+                  />
+                  <button type="submit" className="send-btn">
+                    <FiSend />
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        ) : isMember ? (
+          /* ════════════════════════════════════
+             REGULAR GROUP — existing flat chat
+             ════════════════════════════════════ */
           <>
             <div className="group-messages-container glass">
               <div className="messages-list">
-                {group.messages?.map((msg, index) => {
-                  const sender = msg.sender || {};
-                  return (
-                    <div key={index} className="group-message">
-                      <Avatar
-                        name={sender.name}
-                        src={sender.profilePicture}
-                        size="sm"
-                        className="message-avatar"
-                      />
-                      <div className="message-content">
-                        <div className="message-sender">{sender.name}</div>
-                        <div className="message-text">{msg.text}</div>
-                        <div className="message-time">
-                          {new Date(msg.createdAt).toLocaleTimeString()}
+                {displayMessages.length === 0 ? (
+                  <div className="pgc-empty-msg">No messages yet. Start the conversation!</div>
+                ) : (
+                  displayMessages.map((msg, index) => {
+                    const sender = msg.sender || {};
+                    return (
+                      <div key={msg._id || index} className="group-message">
+                        <Avatar
+                          name={sender.name}
+                          src={sender.profilePicture}
+                          size="sm"
+                          className="message-avatar"
+                        />
+                        <div className="message-content">
+                          <div className="message-sender">{sender.name}</div>
+                          <div className="message-text">{msg.text}</div>
+                          <div className="message-time">
+                            {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ''}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
                 <div ref={messagesEndRef} />
               </div>
             </div>

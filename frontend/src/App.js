@@ -16,6 +16,12 @@ import GroupDetail from './components/Groups/GroupDetail';
 import VideoCall from './components/VideoCall/VideoCall';
 import Discover from './components/Discover/Discover';
 import Requests from './components/Requests/Requests';
+import ProgramMarketplace from './components/Programs/ProgramMarketplace';
+import ProgramDetail from './components/Programs/ProgramDetail';
+import ProgramForm from './components/Programs/ProgramForm';
+import MyPrograms from './components/Programs/MyPrograms';
+import MentorAvailability from './components/Sessions/MentorAvailability';
+import MySessions from './components/Sessions/MySessions';
 
 import Landing from './components/Landing/Landing';
 
@@ -73,54 +79,29 @@ function App() {
       <div className="App">
         {user && <Navbar user={user} logout={logout} />}
         <Routes>
-          <Route
-            path="/"
-            element={<Landing user={user} />}
-          />
-          <Route
-            path="/login"
-            element={user ? <Navigate to="/feed" /> : <Login login={login} />}
-          />
-          <Route
-            path="/register"
-            element={user ? <Navigate to="/feed" /> : <Register login={login} />}
-          />
-          <Route
-            path="/feed"
-            element={user ? <Feed user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/profile/:id"
-            element={user ? <Profile user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/chat"
-            element={user ? <ChatList user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/chat/:id"
-            element={user ? <Chat user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/groups"
-            element={user ? <Groups user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/groups/:id"
-            element={user ? <GroupDetail user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/video/:roomId"
-            element={user ? <VideoCall user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/discover"
-            element={user ? <Discover user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/requests"
-            element={user ? <Requests user={user} /> : <Navigate to="/login" />}
-          />
+          <Route path="/" element={<Landing user={user} />} />
+          <Route path="/login" element={user ? <Navigate to="/feed" /> : <Login login={login} />} />
+          <Route path="/register" element={user ? <Navigate to="/feed" /> : <Register login={login} />} />
+          <Route path="/feed" element={user ? <Feed user={user} /> : <Navigate to="/login" />} />
+          <Route path="/profile/:id" element={user ? <Profile user={user} /> : <Navigate to="/login" />} />
+          <Route path="/chat" element={user ? <ChatList user={user} /> : <Navigate to="/login" />} />
+          <Route path="/chat/:id" element={user ? <Chat user={user} /> : <Navigate to="/login" />} />
+          <Route path="/groups" element={user ? <Groups user={user} /> : <Navigate to="/login" />} />
+          <Route path="/groups/:id" element={user ? <GroupDetail user={user} /> : <Navigate to="/login" />} />
+          <Route path="/video/:roomId" element={user ? <VideoCall user={user} /> : <Navigate to="/login" />} />
+          <Route path="/discover" element={user ? <Discover user={user} /> : <Navigate to="/login" />} />
+          <Route path="/requests" element={user ? <Requests user={user} /> : <Navigate to="/login" />} />
+
+          {/* Programs */}
+          <Route path="/programs" element={user ? <ProgramMarketplace user={user} /> : <Navigate to="/login" />} />
+          <Route path="/programs/my" element={user ? <MyPrograms user={user} /> : <Navigate to="/login" />} />
+          <Route path="/programs/new" element={user ? <ProgramForm user={user} /> : <Navigate to="/login" />} />
+          <Route path="/programs/:id/edit" element={user ? <ProgramForm user={user} /> : <Navigate to="/login" />} />
+          <Route path="/programs/:id" element={user ? <ProgramDetail user={user} /> : <Navigate to="/login" />} />
+
+          {/* Sessions & Availability */}
+          <Route path="/sessions" element={user ? <MySessions user={user} /> : <Navigate to="/login" />} />
+          <Route path="/availability" element={user ? <MentorAvailability user={user} /> : <Navigate to="/login" />} />
         </Routes>
       </div>
     </Router>

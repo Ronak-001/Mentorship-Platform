@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiVideo, FiMessageCircle, FiUserPlus, FiUserMinus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText, FiActivity, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiMessageCircle, FiUserPlus, FiUserMinus, FiEdit2, FiPlus, FiTrash2, FiCheck, FiClock, FiX, FiDownload, FiFileText, FiActivity, FiChevronDown, FiChevronUp, FiCamera, FiImage } from 'react-icons/fi';
 import { resolveMediaUrl } from '../../utils/url';
 import Avatar from '../Avatar';
 import PostCard from '../Feed/PostCard';
@@ -201,21 +201,7 @@ const Profile = ({ user: currentUser }) => {
     }
   };
 
-  const handleRequestMentor = async () => {
-    try {
-      await axios.post(`/users/${id}/request-mentor`, {
-        message: 'I would like to learn from you!'
-      });
-      alert('Mentor request sent!');
-    } catch (error) {
-      console.error('Error requesting mentor:', error);
-    }
-  };
 
-  const startVideoCall = () => {
-    const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    window.open(`/video/${roomId}`, '_blank');
-  };
 
   if (loading) {
     return (
@@ -342,19 +328,26 @@ const Profile = ({ user: currentUser }) => {
             position: 'relative',
             marginBottom: '-60px'
           }}>
-            {isOwnProfile && (
+            {isOwnProfile && editing && (
               <label style={{
                 position: 'absolute',
-                top: '10px',
-                right: '10px',
-                background: 'rgba(0,0,0,0.6)',
+                top: '12px',
+                right: '12px',
+                background: 'rgba(0,0,0,0.55)',
+                backdropFilter: 'blur(8px)',
                 color: 'white',
-                padding: '8px 12px',
-                borderRadius: '6px',
+                padding: '8px 14px',
+                borderRadius: '10px',
                 cursor: 'pointer',
-                fontSize: '12px'
+                fontSize: '0.82rem',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: '1px solid rgba(255,255,255,0.15)',
+                transition: 'all 0.2s'
               }}>
-                {uploadingCover ? '⏳ Uploading...' : '📷 Change Cover'}
+                {uploadingCover ? <><FiClock style={{ animation: 'spin 1s linear infinite' }} /> Uploading...</> : <><FiImage size={15} /> Change Cover</>}
                 <input
                   type="file"
                   accept="image/*"
@@ -367,19 +360,25 @@ const Profile = ({ user: currentUser }) => {
           </div>
           <div className="profile-picture-container" style={{ position: 'relative', zIndex: 1, marginTop: '-30px' }}>
             <Avatar name={profileUser.name} src={profileUser.profilePicture} size="lg" className="profile-picture" />
-            {isOwnProfile && (
+            {isOwnProfile && editing && (
               <label style={{
                 position: 'absolute',
-                bottom: '0',
-                right: '0',
-                background: '#667eea',
+                bottom: '2px',
+                right: '2px',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                 color: 'white',
-                padding: '6px 10px',
+                width: '34px',
+                height: '34px',
                 borderRadius: '50%',
                 cursor: 'pointer',
-                fontSize: '16px'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid rgba(15, 23, 42, 0.8)',
+                boxShadow: '0 2px 8px rgba(99, 102, 241, 0.4)',
+                transition: 'all 0.2s'
               }}>
-                {uploadingPhoto ? '⏳' : '📷'}
+                {uploadingPhoto ? <FiClock size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <FiCamera size={16} />}
                 <input
                   type="file"
                   accept="image/*"
@@ -513,9 +512,7 @@ const Profile = ({ user: currentUser }) => {
                     >
                       <FiCheck /> Connected
                     </button>
-                    <button onClick={startVideoCall} className="btn btn-primary">
-                      <FiVideo /> Video Call
-                    </button>
+
                     <button
                       onClick={async () => {
                         try {
@@ -529,6 +526,14 @@ const Profile = ({ user: currentUser }) => {
                     >
                       <FiMessageCircle /> Message
                     </button>
+                    {profileUser?.role === 'mentor' && (
+                      <button
+                        onClick={() => navigate(`/programs`)}
+                        className="btn book-session-btn"
+                      >
+                        <FiClock /> View Programs
+                      </button>
+                    )}
                   </>
                 )}
 
@@ -568,11 +573,8 @@ const Profile = ({ user: currentUser }) => {
                 {connectionStatus === 'loading' && (
                   <button className="btn btn-primary" disabled>...</button>
                 )}
-                {profileUser.role === 'mentor' && currentUser.role === 'student' && (
-                  <button onClick={handleRequestMentor} className="btn">
-                    Request Mentor
-                  </button>
-                )}
+
+
               </div>
             )}
           </div>

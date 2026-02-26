@@ -328,4 +328,88 @@ router.post('/:id/remove-admin', auth, async (req, res) => {
   }
 });
 
+// ══════════════════════════════════════════════
+// CHANNEL-BASED MESSAGING (for program groups)
+// ══════════════════════════════════════════════
+
+// Get group with channel info (without full messages)
+router.get('/:id/channels', auth, async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id)
+      .populate('admin', 'name profilePicture')
+      .populate('members', 'name profilePicture');
+
+    if (!group) return res.status(404).json({ message: 'Group not found' });
+    if (!group.members.some(m => m._id.toString() === req.user._id.toString())) {
+      return res.status(403).json({ message: 'Not a member' });
+    }
+
+    const channels = group.channels.map(ch => ({
+      _id: ch._id,
+      name: ch.name,
+      type: ch.type,
+      messageCount: ch.messages.length
+    }));
+
+    res.json(channels);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get messages for a specific channel
+router.get('/:id/channels/:channelId/messages', auth, async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ message: 'Group not found' });
+    if (!group.members.some(m => m.toString() === req.user._id.toString())) {
+      return res.status(403).json({ message: 'Not a member' });
+    }
+
+    const channel = group.channels.id(req.params.channelId);
+    if (!channel) return res.status(404).json({ message: 'Channel not found' });
+
+    // Populate sender info
+    await Group.populate(group, { path: 'channels.messages.sender', select: 'name profilePicture', model: 'User' });
+
+    const ch = group.channels.id(req.params.channelId);
+    res.json(ch.messages);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Send message to a channel
+router.post('/:id/channels/:channelId/messages', auth, async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ message: 'Group not found' });
+    if (!group.members.some(m => m.toString() === req.user._id.toString())) {
+      return res.status(403).json({ message: 'Not a member' });
+    }
+
+    const channel = group.channels.id(req.params.channelId);
+    if (!channel) return res.status(404).json({ message: 'Channel not found' });
+
+    // Announcements: only admin/mentor can send
+    if (channel.type === 'announcements') {
+      if (!isGroupAdmin(group, req.user._id)) {
+        return res.status(403).json({ message: 'Only the mentor can post in announcements' });
+      }
+    }
+
+    channel.messages.push({ sender: req.user._id, text: req.body.text });
+    await group.save();
+
+    // Return the new message populated
+    await Group.populate(group, { path: 'channels.messages.sender', select: 'name profilePicture', model: 'User' });
+    const updatedChannel = group.channels.id(req.params.channelId);
+    const newMsg = updatedChannel.messages[updatedChannel.messages.length - 1];
+
+    res.json(newMsg);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

@@ -4,31 +4,25 @@ import CreatePost from './CreatePost';
 import PostCard from './PostCard';
 import './Feed.css';
 
-
-
 const Feed = ({ user }) => {
   const [error, setError] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-
-
   const fetchPosts = useCallback(async () => {
     try {
-      setError(null);        // reset previous errors
-      setLoading(true);      // important if you ever re-fetch
-
+      setError(null);
+      setLoading(true);
       const res = await axios.get('/posts');
       setPosts(res.data);
-
     } catch (error) {
       console.error('Error fetching posts:', error);
       setError('Failed to load feed');
-
     } finally {
       setLoading(false);
     }
   }, []);
+
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
@@ -64,27 +58,25 @@ const Feed = ({ user }) => {
   }
 
   return (
-    <div className="feed-container">
-      <div className="container">
-        <h1 className="feed-title">Your Feed</h1>
-        <CreatePost user={user} onPostCreated={addPost} />
-        <div className="posts-list">
-          {posts.length === 0 ? (
-            <div className="empty-state glass">
-              <p>No posts yet. Be the first to share something!</p>
-            </div>
-          ) : (
-            posts.map(post => (
-              <PostCard
-                key={post._id}
-                post={post}
-                currentUser={user}
-                onUpdate={updatePost}
-                onDelete={removePost}
-              />
-            ))
-          )}
-        </div>
+    <div className="container">
+      <h1 className="feed-title">Your Feed</h1>
+      <CreatePost user={user} onPostCreated={addPost} />
+      <div className="posts-list">
+        {posts.length === 0 ? (
+          <div className="empty-state glass">
+            <p>No posts yet. Be the first to share something!</p>
+          </div>
+        ) : (
+          posts.map(post => (
+            <PostCard
+              key={post._id}
+              post={post}
+              currentUser={user}
+              onUpdate={updatePost}
+              onDelete={removePost}
+            />
+          ))
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,120 @@
+.feed-layout {
+  display: flex;
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  min-height: calc(100vh - 56px);
+}
+
+.feed-main {
+  flex: 1;
+  min-width: 0;
+}
+
 .feed-container {
   padding: 0;
   background: transparent;
   min-height: calc(100vh - 56px);
+}
+
+/* ── Chat Sidebar ── */
+.feed-chat-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 72px;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-chat-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar-chat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1.25rem;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.sidebar-chat-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-chat-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-chat-name {
+  color: #e2e8f0;
+  font-size: 0.88rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-chat-last {
+  color: #64748b;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.sidebar-view-all {
+  display: block;
+  text-align: center;
+  padding: 0.75rem;
+  color: #a5b4fc;
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.15s;
+}
+
+.sidebar-view-all:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+@media (max-width: 900px) {
+  .feed-chat-sidebar {
+    display: none;
+  }
 }
 
 .feed-title {
