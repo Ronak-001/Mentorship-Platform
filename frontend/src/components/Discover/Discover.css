@@ -131,8 +131,8 @@
 .user-card:hover {
   transform: scale(1.05);
   transform: translateY(-5px);
-  background-color: #200b52ca;
-  box-shadow: 0 10px 12px rgba(100, 63, 202, 0.408), 0 12px 16px rgba(183, 141, 225, 0.4);
+  background-color: rgba(8, 17, 53, 0.932);
+  box-shadow: 0 10px 12px rgba(26, 67, 252, 0.459), 0 12px 16px rgba(69, 54, 144, 0.4);
 }
 
 /* ============================= */
@@ -192,9 +192,10 @@
 }
 
 .user-actions .btn:hover {
+  font-weight: 500;
   border: none;
-  background-color: rgb(92, 13, 220);
-  box-shadow: 0 0 2px rgba(89, 45, 214, 0.5), 0 0 4px rgba(255, 255, 255, 0.568);
+  background-color: rgb(69, 50, 240);
+  /* box-shadow: 0 0 2px rgba(65, 45, 214, 0.5), 0 0 4px rgba(255, 255, 255, 0.568); */
 }
 
 /* ============================= */
