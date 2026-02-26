@@ -86,9 +86,7 @@ const Discover = ({ user }) => {
             <button className="btn  btn-success" disabled style={{ opacity: 0.8 }}>
               <FiCheck /> Connected
             </button>
-            <button onClick={() => startVideoCall(userId)} className="btn">
-              <FiVideo />
-            </button>
+
             <button
               onClick={async () => {
                 try {
