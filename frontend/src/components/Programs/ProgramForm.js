@@ -17,6 +17,7 @@ const ProgramForm = ({ user }) => {
 
     useEffect(() => {
         if (isEdit) fetchProgram();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchProgram = async () => {

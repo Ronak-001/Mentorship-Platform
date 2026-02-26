@@ -13,6 +13,7 @@ const MentorAvailability = ({ user }) => {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { fetchAvailability(); }, []);
 
     const fetchAvailability = async () => {

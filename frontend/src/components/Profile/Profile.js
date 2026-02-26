@@ -201,17 +201,6 @@ const Profile = ({ user: currentUser }) => {
     }
   };
 
-  const handleRequestMentor = async () => {
-    try {
-      await axios.post(`/users/${id}/request-mentor`, {
-        message: 'I would like to learn from you!'
-      });
-      alert('Mentor request sent!');
-    } catch (error) {
-      console.error('Error requesting mentor:', error);
-    }
-  };
-
 
 
   if (loading) {

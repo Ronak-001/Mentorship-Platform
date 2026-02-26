@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft, FiCalendar, FiClock, FiEdit2, FiCheck, FiUsers, FiTrash2 } from 'react-icons/fi';
+import { FiArrowLeft, FiCalendar, FiClock, FiEdit2, FiCheck, FiUsers } from 'react-icons/fi';
 import './Programs.css';
 
 const ProgramDetail = ({ user }) => {
@@ -25,6 +25,7 @@ const ProgramDetail = ({ user }) => {
 
     useEffect(() => {
         fetchProgram();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchProgram = async () => {
@@ -65,6 +66,7 @@ const ProgramDetail = ({ user }) => {
 
     useEffect(() => {
         if (selectedDate && program?.format === '1:1') fetchSlots();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedDate]);
 
     const fetchSlots = async () => {

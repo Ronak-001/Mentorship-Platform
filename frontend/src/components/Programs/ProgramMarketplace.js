@@ -12,6 +12,7 @@ const ProgramMarketplace = ({ user }) => {
     const [tab, setTab] = useState('browse'); // 'browse' | 'my'
     const isMentor = user.role === 'mentor';
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { fetchPrograms(); }, []);
 
     const fetchPrograms = async () => {

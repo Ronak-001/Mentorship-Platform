@@ -27,10 +27,12 @@ const MySessions = ({ user }) => {
     const [saved, setSaved] = useState(false);
     const [availLoaded, setAvailLoaded] = useState(false);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { fetchSessions(); }, []);
 
     useEffect(() => {
         if (tab === 'availability' && isMentor && !availLoaded) fetchAvailability();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tab]);
 
     const fetchSessions = async () => {
