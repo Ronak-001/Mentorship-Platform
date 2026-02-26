@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiPlus, FiEdit2, FiTrash2, FiUsers } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiUsers, FiSearch } from 'react-icons/fi';
 import './Programs.css';
 
 const ProgramMarketplace = ({ user }) => {
@@ -10,7 +10,23 @@ const ProgramMarketplace = ({ user }) => {
     const [myPrograms, setMyPrograms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState('browse'); // 'browse' | 'my'
+    const [searchQuery, setSearchQuery] = useState('');
     const isMentor = user.role === 'mentor';
+
+    // Filter programs by title, skills, or mentor name
+    const filterPrograms = (list) => {
+        if (!searchQuery.trim()) return list;
+        const q = searchQuery.toLowerCase();
+        return list.filter(p =>
+            p.title?.toLowerCase().includes(q) ||
+            p.description?.toLowerCase().includes(q) ||
+            p.mentor?.name?.toLowerCase().includes(q) ||
+            p.skillsCovered?.some(s => s.toLowerCase().includes(q))
+        );
+    };
+
+    const filteredPrograms = filterPrograms(programs);
+    const filteredMyPrograms = filterPrograms(myPrograms);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { fetchPrograms(); }, []);
@@ -57,6 +73,18 @@ const ProgramMarketplace = ({ user }) => {
                 )}
             </div>
 
+            {/* Search Bar */}
+            <div className="programs-search-bar">
+                <FiSearch className="programs-search-icon" />
+                <input
+                    type="text"
+                    placeholder="Search by program name, skill, or mentor..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="programs-search-input"
+                />
+            </div>
+
             {/* Tabs for mentor */}
             {isMentor && (
                 <div className="page-tabs">
@@ -72,14 +100,14 @@ const ProgramMarketplace = ({ user }) => {
             {/* Browse Tab */}
             {tab === 'browse' && (
                 <>
-                    {programs.length === 0 ? (
+                    {filteredPrograms.length === 0 ? (
                         <div className="programs-empty">
-                            <h3>No programs yet</h3>
-                            <p>Check back later or create one if you're a mentor!</p>
+                            <h3>{searchQuery ? 'No programs match your search' : 'No programs yet'}</h3>
+                            <p>{searchQuery ? 'Try a different keyword' : "Check back later or create one if you're a mentor!"}</p>
                         </div>
                     ) : (
                         <div className="programs-grid">
-                            {programs.map(prog => (
+                            {filteredPrograms.map(prog => (
                                 <div key={prog._id} className="program-card" onClick={() => navigate(`/programs/${prog._id}`)}>
                                     <div className="card-top">
                                         <span className="badge badge-format">{prog.format}</span>
@@ -109,14 +137,14 @@ const ProgramMarketplace = ({ user }) => {
             {/* My Programs Tab */}
             {tab === 'my' && isMentor && (
                 <>
-                    {myPrograms.length === 0 ? (
+                    {filteredMyPrograms.length === 0 ? (
                         <div className="programs-empty">
-                            <h3>No programs created yet</h3>
-                            <p>Start by creating your first mentorship program!</p>
+                            <h3>{searchQuery ? 'No matching programs' : 'No programs created yet'}</h3>
+                            <p>{searchQuery ? 'Try a different keyword' : 'Start by creating your first mentorship program!'}</p>
                         </div>
                     ) : (
                         <div className="programs-grid">
-                            {myPrograms.map(prog => (
+                            {filteredMyPrograms.map(prog => (
                                 <div key={prog._id} className="program-card">
                                     <div className="card-top">
                                         <span className="badge badge-format">{prog.format}</span>

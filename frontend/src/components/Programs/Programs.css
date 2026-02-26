@@ -27,6 +27,43 @@
     margin-bottom: 1.5rem;
 }
 
+/* ── Programs Search Bar ── */
+.programs-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 1rem;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.2s;
+}
+
+.programs-search-bar:focus-within {
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.programs-search-icon {
+    color: #94a3b8;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.programs-search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+}
+
+.programs-search-input::placeholder {
+    color: #64748b;
+}
+
 /* ── Page Tabs (shared) ── */
 .page-tabs {
     display: flex;
