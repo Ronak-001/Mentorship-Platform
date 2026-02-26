@@ -328,7 +328,7 @@ const Profile = ({ user: currentUser }) => {
             position: 'relative',
             marginBottom: '-60px'
           }}>
-            {isOwnProfile && (
+            {isOwnProfile && editing && (
               <label style={{
                 position: 'absolute',
                 top: '10px',
@@ -353,7 +353,7 @@ const Profile = ({ user: currentUser }) => {
           </div>
           <div className="profile-picture-container" style={{ position: 'relative', zIndex: 1, marginTop: '-30px' }}>
             <Avatar name={profileUser.name} src={profileUser.profilePicture} size="lg" className="profile-picture" />
-            {isOwnProfile && (
+            {isOwnProfile && editing && (
               <label style={{
                 position: 'absolute',
                 bottom: '0',

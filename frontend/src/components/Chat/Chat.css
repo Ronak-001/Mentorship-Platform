@@ -53,12 +53,12 @@
 .chat-name {
   font-weight: 600;
   margin-bottom: 0.2rem;
-  color: #111827;
+  color: #e2e8f0;
 }
 
 .chat-last-message {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #94a3b8;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -116,12 +116,12 @@
 
 .chat-header-name {
   font-weight: 600;
-  color: #111827;
+  color: #e2e8f0;
 }
 
 .chat-header-role {
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: #94a3b8;
   text-transform: capitalize;
 }
 
@@ -192,7 +192,7 @@
   font-size: 0.8125rem;
   font-weight: 600;
   margin-bottom: 0.2rem;
-  color: #111827;
+  color: #cbd5e1;
 }
 
 .message.own .message-sender {
